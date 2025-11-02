@@ -1,0 +1,259 @@
+:root {
+  --background-color: #2a2623;
+  --text-color: #685951;
+  --title-color: #444;
+  --sub-text-color: #4d4d4d;
+  --link-color: #fcc440;
+  --link-hover-color: #ffbd22;
+  --hover-color: #fcc440;
+  --hover-text-color: #2a2623;
+  --tag-color: #221f1d;
+  --tag-text-color: #d7c1ad;
+  --tag-shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Basic reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--background-color);
+  height: 100%;
+  font-family: "DM Sans", sans-serif;
+  font-size: 16px; /* Base font size */
+}
+
+.main-container {
+  display: flex;
+  /*
+   * flex-direction: column;
+   *   This tells the container to arrange its flex items vertically,
+   *   starting from the top and moving down.
+   */
+  flex-direction: column;
+  margin: 0 auto;
+  max-width: 80vw;
+  min-height: 100%;
+  padding: 2rem 2rem 0.6rem; /* Top, right/left, bottom */
+}
+
+.profile-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4rem;
+  padding: 5rem;
+}
+
+.profile-image {
+  width: 10rem;
+  height: 10rem;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+}
+
+.greeting {
+  font-size: 0.8rem;
+  color: var(--text-color);
+}
+
+.username {
+  font-size: 1.3rem;
+  color: var(--text-color);
+  padding: 0 0.2rem; /* Horizontal padding */
+  font-weight: 700;
+}
+
+.job-title {
+  font-size: 0.8rem;
+  color: var(--text-color);
+  font-weight: 700;
+}
+
+.social-links {
+  display: flex;
+  justify-content: left;
+  gap: 1rem;
+}
+
+.github-logo {
+  margin: 0.3rem;
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.blog-container {
+  /*
+    flex: 1; is the shortened version of
+      flex-grow: 1;
+          This means the element is allowed to grow and will take up all available space
+          in its container after other elements have taken their required space.
+      flex-shrink: 1;
+          This means the element is allowed to shrink if needed when there is no enough space.
+      flex-basis: 0%;
+          This sets the initial size before growing/shrinking.
+          With 0%, it means the element will start at 0 and the grows based on flex-grow.
+  */
+  flex: 1;
+  margin: 0 auto;
+}
+
+.blog-container-title {
+  font-size: 2rem;
+  margin-top: 2rem;
+  margin-bottom: 1.5rem;
+  color: var(--title-color);
+}
+
+.blog-post {
+  margin-bottom: 2.5rem;
+}
+
+.blog-post-title {
+  margin-bottom: 0.3rem;
+}
+
+.blog-post-title-link {
+  font-size: 1.3rem;
+  color: var(--link-color);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.blog-post-title-link:hover {
+  color: var(--link-hover-color);
+}
+
+.publish-date {
+  font-size: 0.9rem;
+  color: var(--sub-text-color);
+  margin-left: 2rem;
+}
+
+.tags {
+  display: flex;
+  /*
+   * flex-wrap: wrap;
+   *   This allows the tags to wrap onto multiple lines if they don't fit in one line.
+   */
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+  margin-left: 2rem;
+}
+
+.tag-container-title {
+  font-size: 0.9rem;
+  color: var(--sub-text-color);
+}
+
+.tag-icon {
+  width: 10px;
+  height: 10px;
+  vertical-align: sub;
+  margin-right: 0.2rem;
+}
+
+.tag {
+  background-color: var(--tag-color);
+  color: var(--tag-text-color);
+  font-size: 0.65rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0.3rem;
+  letter-spacing: 0.02rem;
+  box-shadow: 0 0.06rem 0.2rem var(--tag-shadow-color);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.summary {
+  color: var(--text-color);
+  font-size: 1rem;
+  margin-left: 2rem;
+  max-width: 45vw;
+}
+
+footer {
+  text-align: center;
+}
+
+.footer-text {
+  font-size: 0.7rem;
+  color: var(--sub-text-color);
+}
+
+::selection {
+  background-color: var(--hover-color);
+  color: var(--hover-text-color);
+}
+
+/* Smaller smartphone */
+@media (max-width: 480px) {
+  html, body {
+    font-size: 11px;
+  }
+
+  .main-container {
+    max-width: 90vw;
+  }
+
+  .profile-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .social-links {
+    justify-content: center;
+  }
+
+  .blog-container {
+    max-width: 80vw;
+  }
+
+  .summary {
+    max-width: 60vw;
+  }
+}
+
+/* Tablet and larger smartphones */
+@media (min-width: 481px) and (max-width: 768px) {
+  html, body {
+    font-size: 12px;
+  }
+
+  .main-container {
+    max-width: 90vw;
+  }
+
+  .profile-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .social-links {
+    justify-content: center;
+  }
+
+  .blog-container {
+    max-width: 80vw;
+  }
+ 
+  .summary {
+    max-width: 60vw;
+  }
+}
+
+/* Laptops and larger tablets in landscape, and small desktops */
+@media (min-width: 769px) and (max-width: 1279px) {
+}
+
+/* Larger desktops and monitors */
+@media (min-width: 1280px) {
+  .blog-container {
+    max-width: 800px;
+  }
+}

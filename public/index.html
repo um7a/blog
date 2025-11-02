@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      NOTE
+      width=device-width
+        This tells the browser to set the width of the viewport to the width of the device's screen.
+        Without this, many older mobile browsers would render a "desktop-sized" (usually 980px wide) version of
+        your page and then zoom out to fit it on the small screen, making text tiny and unreadable.
+    
+      initial-scale=1.0
+        This sets the initial zoom level when the page is first loaded. 1.0 means there's no zoom,
+        and the page is rendered at a 1:1 scale relative to the device's screen.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>um7a Home</title>
+    <!-- For Google font "DM Sans" -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@100;200;300;400;500;600;700;800;900&&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Base style -->
+    <link rel="stylesheet" href="./styles/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Profile -->
+      <div class="profile-container">
+        <img class="profile-image" src="images/profile.png" alt="Profile Image" />
+        <div class="profile-info">
+          <p>
+            <span class="username">um7a</span>
+          </p>
+          <p class="job-title">Web / Network Engineer</p>
+        </div>
+      </div>
+      <!-- Blog -->
+      <div class="blog-container">
+        <h2 class="blog-container-title">Blog</h2>
+        <div class="blog-post">
+          <h3 class="blog-post-title">
+            <a class="blog-post-title-link" href="blog/20250603-understanding-github-actions/index.html">#3 Understanding GitHub Actions</a>
+          </h3>
+          <p class="publish-date">June 3, 2025</p>
+          <p class="summary">In this article, I'd like to delve into GitHub Actions.</p>
+          <div class="tags">
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">GitHub</span>
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">GitHub Action</span>
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">CI/CD</span>
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">Setup</span>
+          </div>
+        </div>
+        <div class="blog-post">
+          <h3 class="blog-post-title">
+            <a class="blog-post-title-link" href="blog/20250529-understanding-github-organizations/index.html">#2 Understanding GitHub Organizations</a>
+          </h3>
+          <p class="publish-date">May 29, 2025</p>
+          <p class="summary">In this article, I'd like to delve into GitHub Organization accounts - how to create one and what settings can be configured.</p>
+          <div class="tags">
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">GitHub</span>
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">Setup</span>
+          </div>
+        </div>
+        <div class="blog-post">
+          <h3 class="blog-post-title">
+            <a class="blog-post-title-link" href="blog/20250505-coredns-setup/index.html">#1 CoreDNS Setup</a>
+          </h3>
+          <p class="publish-date">May 5, 2025</p>
+          <p class="summary">This article walks you through how to set up CoreDNS.</p>
+          <div class="tags">
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">DNS</span>
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">CoreDNS</span>
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">Setup</span>
+            <span class="tag"><img src=blog/images/tag-02.svg class="tag-icon">CNCF</span>
+          </div>
+        </div>
+      </div>
+      <!-- End of Blog -->
+      <!-- Footer -->
+      <footer>
+        <p class="footer-text">&copy; 2025 um7a | All Rights Reserved</p>
+      </footer>
+    </div>
+  </body>
+</html>
