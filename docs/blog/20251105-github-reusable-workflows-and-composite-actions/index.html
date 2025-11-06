@@ -1,0 +1,223 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      NOTE
+      width=device-width
+        This tells the browser to set the width of the viewport to the width of the device's screen.
+        Without this, many older mobile browsers would render a "desktop-sized" (usually 980px wide) version of
+        your page and then zoom out to fit it on the small screen, making text tiny and unreadable.
+  
+      initial-scale=1.0
+        This sets the initial zoom level when the page is first loaded. 1.0 means there's no zoom,
+        and the page is rendered at a 1:1 scale relative to the device's screen.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub Reusable Workflows and Composite Actions</title>
+    <!-- For Google font "DM Sans" -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&&display=swap"
+      rel="stylesheet"
+    />
+    <!-- For Prism code snippet -->
+    <link rel="stylesheet" href="../../styles/prism-duotone-earth.css" />
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-yaml.min.js"></script>
+    <script src="../../scripts/prism-custom-syntax-dns-zone.js"></script>
+    <!-- Base style -->
+    <link rel="stylesheet" href="../styles/blog-style.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <a class="home-link" href="../../index.html">&lt; Back to Home</a>
+    </nav>
+    <header>
+      <h1 class="blog-post-title">GitHub Reusable Workflows and Composite Actions</h1>
+      <div class="blog-post-metadata">
+        <p class="publish-date">
+            November 5, 2025
+        </p>
+        <div class="tags">
+          <span class="tag"><img src=../images/tag-02.svg class="tag-icon">GitHub</span>
+          <span class="tag"><img src=../images/tag-02.svg class="tag-icon">GitHub Action</span>
+          <span class="tag"><img src=../images/tag-02.svg class="tag-icon">CI/CD</span>
+        </div>
+      </div>
+    </header>
+    <nav class="toc">
+      <h2 class="toc-title">Table of Contents</h2>
+      <ul class="toc-list">
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#what-are-reusable-workflows-and-composite-actions">What Are Reusable Workflows and Composite Actions</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#creating-a-reusable-workflow">Creating a Reusable Workflow</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#calling-a-reusable-workflow">Calling a Reusable Workflow</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#limitations-of-reusable-workflows">Limitations of Reusable Workflows</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#creating-a-composite-action">Creating a Composite Action</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#calling-a-composite-action">Calling a Composite Action</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#limitations-of-composite-actions">Limitations of Composite Actions</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#when-to-use-each">When to Use Each</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#conclusion">Conclusion</a></li>
+      </ul>
+    </nav>
+    <article>
+      <h2 id="what-are-reusable-workflows-and-composite-actions" class="chapter-title">What Are Reusable Workflows and Composite Actions</h2>
+      <p>Creating <strong>reusable workflows</strong> and <strong>composite actions</strong> allows you to centralize and standardize repetitive steps in your development process.</p>
+      <p><strong>Reusable workflows</strong> allow you to define a workflow template that can be reused across multiple repositories.</p>
+      <p><strong>Composite actions</strong> allow you to encapsulate a sequence of steps into a single action, which can be reused across multiple workflows and repositories.</p>
+      <h2 id="creating-a-reusable-workflow" class="chapter-title">Creating a Reusable Workflow</h2>
+      <p>Let's create a new repository for a reusable workflow in your organization.
+You can create a repository under your personal account. However, there are a few important differences to be aware of.</p>
+      <ul>
+        <li>Public repo : Any workflow in any repository.</li>
+        <li>Private repo (under your personal account) : Only workflows in the <strong>same repository</strong>.</li>
+        <li>Private repo (in organization) : Workflows in other repos within the same organization.</li>
+      </ul>
+      <br/>      <p>Next, let's create a directory <code class="inline-code-snippet">.github/workflows</code> and place a <code class="inline-code-snippet">build-nodejs.yml</code> in it.</p>
+      <pre class="code-block"><code class="language-none">.github
+└── workflows
+    └── build-nodejs.yml
+</code></pre>
+      <p>A reusable workflow is almost identical to a normal workflow, except that it is triggered exclusively by the <code class="inline-code-snippet">workflow_call</code> event:</p>
+      <pre class="code-block"><code class="language-yaml">on:
+  workflow_call:
+</code></pre>
+      <p>The following is a sample reusable workflow (<code class="inline-code-snippet">.github/workflows/build-nodejs.yml</code>) :</p>
+      <pre class="code-block"><code class="language-yaml">name: Node.js CI Reusable workflow
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        description: 'Node.js version to use'
+        required: false
+        default: latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Use Node.js ${{ inputs['node-version'] }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs['node-version'] }}
+    - name: Run ci
+      run: npm ci
+    - name: Run build
+      run: npm run build --if-present
+    - name: Run test
+      run: npm test
+</code></pre>
+      <h2 id="calling-a-reusable-workflow" class="chapter-title">Calling a Reusable Workflow</h2>
+      <p>To call a reusable workflow from another workflow, specify it with  <code class="inline-code-snippet">uses: &lt;user&gt;/&lt;repo&gt;/.github/workflows/&lt;file&gt;@&lt;ref&gt;</code> syntax in a job definition.
+The following is a sample workflow calls a reusable workflow.</p>
+      <pre class="code-block"><code class="language-yaml">name: Workflow example calls reusable workflow
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  ci:
+    name: run build process
+    uses: <user>/<repo>/.github/workflows/build-nodejs.yml@main
+    with:
+      node-version: 'latest' # Node.js version to use (e.g., '22', '24', 'latest')
+</code></pre>
+      <h2 id="limitations-of-reusable-workflows" class="chapter-title">Limitations of Reusable Workflows</h2>
+      <ul>
+        <li>
+          <p>Environment variables set at the caller level cannot be accessed within the reusable workflow and vice versa.</p>
+        </li>
+        <li>
+          <p>A reusable workflow cannot call another reusable workflow.</p>
+        </li>
+        <li>
+          <p>A single workflow cannot call more than 20 reusable workflows.</p>
+        </li>
+      </ul>
+      <h2 id="creating-a-composite-action" class="chapter-title">Creating a Composite Action</h2>
+      <p>You can store a composite action in an existing or new repository.
+Create a directory such as <code class="inline-code-snippet">.github/actions/build-nodejs</code> and place an <code class="inline-code-snippet">action.yml</code> in it.
+The directory name <code class="inline-code-snippet">build-nodejs</code> will be used as the name of the action.</p>
+      <pre class="code-block"><code class="language-none">.github
+└── actions
+    └── build-nodejs
+        └── action.yml
+</code></pre>
+      <p>The following is a sample composite action (<code class="inline-code-snippet">.github/actions/build-nodejs/action.yml</code>) :</p>
+      <pre class="code-block"><code class="language-yaml">name: 'Node.js CI Composite action'
+description: 'Node.js CI'
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: latest
+
+runs:
+  using: 'composite'  # Specify this is a composite action
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Use Node.js "${{ inputs.node-version }}"
+      uses: actions/setup-node@v4
+      with:
+        node-version: "${{ inputs.node-version }}"
+    - name: Run ci
+      run: npm ci
+    - name: Run build
+      run: npm run build --if-present
+    - name: Run test
+      run: npm test
+</code></pre>
+      <h2 id="calling-a-composite-action" class="chapter-title">Calling a Composite Action</h2>
+      <p>The following is a sample workflow calls a composite action :</p>
+      <pre class="code-block"><code class="language-yaml">name: Workflow example calls composite action 
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  ci:
+    name: run build process
+    uses: <user>/<repo>/.github/actions/build-nodejs@main
+</code></pre>
+      <h2 id="limitations-of-composite-actions" class="chapter-title">Limitations of Composite Actions</h2>
+      <ul>
+        <li>
+          <p>Composite actions cannot directly access repository secrets; they inherit them from the calling workflow.</p>
+        </li>
+        <li>
+          <p>Composite actions cannot modify the environment or context in which they run.</p>
+        </li>
+        <li>
+          <p>Composite actions do not have built-in concurrency control. Concurrency control must be managed at the workflow level.</p>
+        </li>
+        <li>
+          <p>A composite action has a nesting limit of 20 levels, with the initial calling action counted as one of those levels.</p>
+        </li>
+      </ul>
+      <h2 id="when-to-use-each" class="chapter-title">When to Use Each</h2>
+      <p>Use reusable workflows when:</p>
+      <ul>
+        <li>You want to reuse entire jobs or pipelines (like build → test → deploy).</li>
+        <li>You want to control over permissions, concurrency, matrix builds, or secrets.</li>
+      </ul>
+      <p>Use composite actions when:</p>
+      <ul>
+        <li>You want to reuse a sequence of steps inside a single job.</li>
+        <li>You don't need to define jobs or control permissions/secrets.</li>
+      </ul>
+      <h2 id="conclusion" class="chapter-title">Conclusion</h2>
+      <p>Reusable workflows and composite actions make GitHub Actions more modular and maintainable.
+Use reusable workflows for full pipelines and composite actions for smaller step sequences.
+Choosing the right one helps keep your automation clean, reusable, and easy to manage.</p>
+    </article>
+    <!-- Footer -->
+    <footer>
+      <p class="footer-text">&copy; 2025 um7a | All Rights Reserved</p>
+    </footer>
+  </body>
+</html>
