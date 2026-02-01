@@ -1,0 +1,283 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      NOTE
+      width=device-width
+        This tells the browser to set the width of the viewport to the width of the device's screen.
+        Without this, many older mobile browsers would render a "desktop-sized" (usually 980px wide) version of
+        your page and then zoom out to fit it on the small screen, making text tiny and unreadable.
+  
+      initial-scale=1.0
+        This sets the initial zoom level when the page is first loaded. 1.0 means there's no zoom,
+        and the page is rendered at a 1:1 scale relative to the device's screen.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes Setup - Control Plane</title>
+    <!-- For Google font "DM Sans" -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&&display=swap"
+      rel="stylesheet"
+    />
+    <!-- For Prism code snippet -->
+    <link rel="stylesheet" href="../../styles/prism-duotone-earth.css" />
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-yaml.min.js"></script>
+    <script src="../../scripts/prism-custom-syntax-dns-zone.js"></script>
+    <!-- Base style -->
+    <link rel="stylesheet" href="../styles/blog-style.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <a class="home-link" href="../../index.html">&lt; Back to Home</a>
+    </nav>
+    <header>
+      <h1 class="blog-post-title">Kubernetes Setup - Control Plane</h1>
+      <div class="blog-post-metadata">
+        <p class="publish-date">
+            January 21, 2026
+        </p>
+        <div class="tags">
+          <span class="tag"><img src=../images/tag-02.svg class="tag-icon">Kubernetes</span>
+          <span class="tag"><img src=../images/tag-02.svg class="tag-icon">Raspberry Pi</span>
+        </div>
+      </div>
+    </header>
+    <nav class="toc">
+      <h2 class="toc-title">Table of Contents</h2>
+      <ul class="toc-list">
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#introduction">Introduction</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#configuration">Configuration</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#setup">Setup</a></li>
+          <ul class="sub-toc-list">
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#1.-disable-swap">1. Disable Swap</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#2.-set-selinux-to-permissive">2. Set SELinux to permissive</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#3.-enable-ipv4-packet-forwarding">3. Enable IPv4 packet forwarding</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#3.-enable-memory-cgroup-controller">3. Enable memory cgroup controller</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#5.-install-containerd">5. Install containerd</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#6.-install-kubernetes-components">6. Install Kubernetes components</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#7.-initialize-the-control-plane">7. Initialize the control plane</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#8.-setup-kubeconfig">8. Setup kubeconfig</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#9.-install-a-cni-(network-plugin)">9. Install a CNI (network plugin)</a></li>
+          </ul>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#what-is-next?">What is next?</a></li>
+        <li class="toc-list-item"><a class="toc-list-item-link" href="#references">References</a></li>
+      </ul>
+    </nav>
+    <article>
+      <h2 id="introduction" class="chapter-title">Introduction</h2>
+      <p>This article walks you through how to set up a Kubernetes control plane on Rocky Linux 10 with Raspberry Pi 5.</p>
+      <h2 id="configuration" class="chapter-title">Configuration</h2>
+      <ul>
+        <li>Hardware : Raspberry Pi 5 (8GB RAM)</li>
+        <li>OS : Rocky Linux 10</li>
+      </ul>
+      <h2 id="setup" class="chapter-title">Setup</h2>
+      <h3 id="1.-disable-swap" class="section-title">1. Disable Swap</h3>
+      <p>The default behavior of a kubelet is to fail to start if swap memory is detected on a node. This means that swap should either be disabled or tolerated by kubelet. I chose the former.</p>
+      <p>In a typical environment, swap is controlled by <code class="inline-code-snippet">/etc/fstab</code>. So you can disable swap by the following command.</p>
+      <pre class="code-block"><code class="language-bash"># Disable swap
+$ sudo swapoff -a
+# To make the change persistent across reboots
+$ sudo sed -i '/swap/d' /etc/fstab
+</code></pre>
+      <p>However, in Rocky Linux with Raspberry Pi environment, swap is real disk partition and is not controlled by <code class="inline-code-snippet">/etc/fstab</code>.
+So even if you remove the swap configuration from <code class="inline-code-snippet">/etc/fstab</code>, swap is re-enabled after rebooting.</p>
+      <pre class="code-block"><code class="language-bash"># swap is MMC (Multi Media Card) device
+$ swapon --show
+NAME           TYPE      SIZE USED PRIO
+/dev/mmcblk0p2 partition 512M   0B   -2
+</code></pre>
+      <p>To disable swap in Rocky Linux with Raspberry Pi environment, mask <code class="inline-code-snippet">swap.target</code>.</p>
+      <pre class="code-block"><code class="language-bash"># Disable swap
+$ sudo swapoff -a
+# Not allow systemd to use swap after reboot
+$ sudo systemctl mask swap.target
+</code></pre>
+      <p>Reboot and check that swap is disabled.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo reboot
+$ swapon --show
+# -> should be empty
+</code></pre>
+      <h3 id="2.-set-selinux-to-permissive" class="section-title">2. Set SELinux to permissive</h3>
+      <pre class="code-block"><code class="language-bash"># Set SELinux to permissive
+$ sudo setenforce 0
+# Set SELinux to permissive after reboot
+$ sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+</code></pre>
+      <p>Check that SELinux is in permissive mode.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo reboot
+$ getenforce
+Permissive
+</code></pre>
+      <h3 id="3.-enable-ipv4-packet-forwarding" class="section-title">3. Enable IPv4 packet forwarding</h3>
+      <p>By default, the Linux kernel does not allow IPv4 packets to be routed between interfaces.<br />Most Kubernetes cluster networking implementations will change this setting, but some might expect the administrator to do it manually.</p>
+      <pre class="code-block"><code class="language-bash">$ cat &lt;&lt;EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.ipv4.ip_forward = 1
+EOF
+</code></pre>
+      <p>Apply sysctl params without reboot.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo sysctl --system
+</code></pre>
+      <h3 id="3.-enable-memory-cgroup-controller" class="section-title">3. Enable memory cgroup controller</h3>
+      <p>In Rocky Linux 10 with Raspberry Pi environment, <code class="inline-code-snippet">cgroup_disable=memory</code> is set, but this causes an error in the initialization of kubeadm.</p>
+      <p>Verify the current kernel cmdline.</p>
+      <pre class="code-block"><code class="language-bash">$ cat /proc/cmdline
+reboot=w coherent_pool=1M 8250.nr_uarts=1 pci=pcie_bus_safe cgroup_disable=memory numa_policy=interleave bcm2708_fb.fbwidth=640 bcm2708_fb.fbheight=480 bcm2708_fb.fbdepth=16 bcm2708_fb.fbswap=1 smsc95xx.macaddr=2C:CF:67:DC:D6:11 vc_mem.mem_base=0x3fc00000 vc_mem.mem_size=0x40000000  console=ttyAMA0,115200 console=tty1 root=LABEL=RPIROOT rootfstype=ext4 rootwait
+</code></pre>
+      <p>To enable the memory cgroup controller, add <code class="inline-code-snippet">cgroup_enable=memory cgroup_memory=1</code> at the end of <code class="inline-code-snippet">/boot/efi/cmdline.txt</code>.</p>
+      <pre class="code-block"><code class="language-bash"># Add `cgroup_enable=memory cgroup_memory=1` at the end
+$ sudo vi /boot/efi/cmdline.txt
+console=ttyAMA0,115200 console=tty1 root=LABEL=RPIROOT rootfstype=ext4 rootwait cgroup_enable=memory cgroup_memory=1
+</code></pre>
+      <p>Confirm the kernel cmdline is updated.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo reboot
+$ cat /proc/cmdline
+reboot=w coherent_pool=1M 8250.nr_uarts=1 pci=pcie_bus_safe cgroup_disable=memory numa_policy=interleave bcm2708_fb.fbwidth=640 bcm2708_fb.fbheight=480 bcm2708_fb.fbdepth=16 bcm2708_fb.fbswap=1 smsc95xx.macaddr=2C:CF:67:DC:D6:11 vc_mem.mem_base=0x3fc00000 vc_mem.mem_size=0x40000000  console=ttyAMA0,115200 console=tty1 root=LABEL=RPIROOT rootfstype=ext4 rootwait cgroup_enable=memory cgroup_memory=1
+</code></pre>
+      <h3 id="5.-install-containerd" class="section-title">5. Install containerd</h3>
+      <p>Add docker-ce repo and install containerd from it.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo dnf install -y yum-utils
+$ sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+$ sudo dnf install -y containerd.io
+</code></pre>
+      <p>Configure containerd.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo containerd config default | sudo tee /etc/containerd/config.toml
+</code></pre>
+      <p>Start containerd.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo systemctl enable --now containerd
+$ systemctl status containerd
+● containerd.service - containerd container runtime
+     Loaded: loaded (/usr/lib/systemd/system/containerd.service; enabled; preset: disabled)
+     Active: active (running) since Sat 2026-01-31 21:07:34 PST; 10s ago
+ Invocation: 6ca979d926954fc291d2ab689e1f0767
+       Docs: https://containerd.io
+    Process: 1534 ExecStartPre=/sbin/modprobe overlay (code=exited, status=0/SUCCESS)
+   Main PID: 1536 (containerd)
+      Tasks: 10
+     Memory: 16.7M (peak: 24M)
+        CPU: 133ms
+     CGroup: /system.slice/containerd.service
+             └─1536 /usr/bin/containerd
+
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.818733735-08:00" level=info msg="Start cni network conf syncer for default"
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.818746810-08:00" level=info msg="Start streaming server"
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.818789885-08:00" level=info msg="Registered namespace \"k8s.io\" with NRI"
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.818806626-08:00" level=info msg="runtime interface starting up..."
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.818817385-08:00" level=info msg="starting plugins..."
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.818839867-08:00" level=info msg="Synchronizing NRI (plugin) with current runtime state"
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.819465044-08:00" level=info msg=serving... address=/run/containerd/containerd.sock.ttrpc
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.819549046-08:00" level=info msg=serving... address=/run/containerd/containerd.sock
+Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.820267521-08:00" level=info msg="containerd successfully booted in 0.065157s"
+Jan 31 21:07:34 control01.local systemd[1]: Started containerd.service - containerd container runtime.
+</code></pre>
+      <h3 id="6.-install-kubernetes-components" class="section-title">6. Install Kubernetes components</h3>
+      <p>Add Kubernetes repo.
+The <code class="inline-code-snippet">exclude</code> parameter in the repository definition ensures that the packages related to Kubernetes are not upgraded upon running <code class="inline-code-snippet">dnf update</code> as there's a special procedure that must be followed for upgrading Kubernetes.</p>
+      <pre class="code-block"><code class="language-bash">$ cat &lt;&lt;EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.35/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.35/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+</code></pre>
+      <p>Install kubelet, kubeadm, and kubectl.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo dnf install -y \
+kubelet \
+kubeadm \
+kubectl \
+--disableexcludes=kubernetes
+</code></pre>
+      <p>Start and enable kubelet.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo systemctl enable --now kubelet
+</code></pre>
+      <h3 id="7.-initialize-the-control-plane" class="section-title">7. Initialize the control plane</h3>
+      <p>Execute kubeadm to initialize the control plane.
+<code class="inline-code-snippet">--pod-network-cidr</code> defines the IP range used internally for Pod IPs, which must not overlap with :</p>
+      <ul>
+        <li>your node network</li>
+        <li>any other networks your cluster can route to</li>
+      </ul>
+      <pre class="code-block"><code class="language-bash">$ sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+</code></pre>
+      <h3 id="8.-setup-kubeconfig" class="section-title">8. Setup kubeconfig</h3>
+      <pre class="code-block"><code class="language-bash">$ mkdir -p $HOME/.kube
+$ sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
+$ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+</code></pre>
+      <p>It looks like the control-plane's status is <code class="inline-code-snippet">NotReady</code>, but it is normal at this stage. After setting up CNI, the status will change.</p>
+      <pre class="code-block"><code class="language-bash">$ kubectl get nodes
+NAME              STATUS     ROLES           AGE   VERSION
+control01.local   NotReady   control-plane   29s   v1.35.0
+</code></pre>
+      <h3 id="9.-install-a-cni-(network-plugin)" class="section-title">9. Install a CNI (network plugin)</h3>
+      <p>Load required kernel module <code class="inline-code-snippet">br_netfilter</code>.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo modprobe br_netfilter
+$ cat &lt;&lt;EOF | sudo tee /etc/modules-load.d/k8s.conf
+br_netfilter
+EOF
+</code></pre>
+      <p>Verify that kernel module is loaded.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo reboot
+$ lsmod | grep br_netfilter
+br_netfilter           65536  0
+bridge                245760  1 br_netfilter
+ipv6                  638976  60 bridge,br_netfilter,nf_reject_ipv6,nft_fib_ipv6
+</code></pre>
+      <p>Configure sysctl.</p>
+      <pre class="code-block"><code class="language-bash">$ cat &lt;&lt;EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+</code></pre>
+      <p>Apply sysctl params without reboot.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo sysctl --system
+</code></pre>
+      <p>Install Flannel (simple & common).</p>
+      <pre class="code-block"><code class="language-bash">$ kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+namespace/kube-flannel created
+clusterrole.rbac.authorization.k8s.io/flannel created
+clusterrolebinding.rbac.authorization.k8s.io/flannel created
+serviceaccount/flannel created
+configmap/kube-flannel-cfg created
+daemonset.apps/kube-flannel-ds created
+</code></pre>
+      <p>After waiting for 30 to 60 seconds, verify that the following pods are <code class="inline-code-snippet">Running</code> and control-plane node is <code class="inline-code-snippet">Ready</code> :</p>
+      <pre class="code-block"><code class="language-bash">$ kubectl get pods -n kube-flannel
+NAME                    READY   STATUS    RESTARTS   AGE
+kube-flannel-ds-vjzgw   1/1     Running   0          30s
+
+$ kubectl get pods -n kube-system
+NAME                                      READY   STATUS    RESTARTS        AGE
+coredns-7d764666f9-bjqg6                  1/1     Running   0               3m52s
+coredns-7d764666f9-xzcqs                  1/1     Running   0               3m52s
+etcd-control01.local                      1/1     Running   1 (2m21s ago)   3m58s
+kube-apiserver-control01.local            1/1     Running   1 (2m21s ago)   3m59s
+kube-controller-manager-control01.local   1/1     Running   1 (2m21s ago)   3m58s
+kube-proxy-s7gfz                          1/1     Running   1 (2m21s ago)   3m52s
+kube-scheduler-control01.local            1/1     Running   1 (2m21s ago)   4m1s
+
+$ kubectl get nodes
+NAME              STATUS   ROLES           AGE     VERSION
+control01.local   Ready    control-plane   4m24s   v1.35.0
+</code></pre>
+      <h2 id="what-is-next?" class="chapter-title">What is next?</h2>
+      <p>Now the control plane is ready. I will setup worker nodes next.</p>
+      <h2 id="references" class="chapter-title">References</h2>
+      <ul>
+        <li><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/">Installing kubeadm</a></li>
+        <li><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/">Creating a cluster with kubeadm</a></li>
+      </ul>
+    </article>
+    <!-- Footer -->
+    <footer>
+      <p class="footer-text">&copy; 2025 um7a | All Rights Reserved</p>
+    </footer>
+  </body>
+</html>
