@@ -98,7 +98,7 @@ $ sudo systemctl mask swap.target
       <p>Reboot the system and verify that swap is disabled:</p>
       <pre class="code-block"><code class="language-bash">$ sudo reboot
 $ swapon --show
-# -> should be empty
+# -&gt; should be empty
 </code></pre>
       <h3 id="2.2.-set-selinux-to-permissive" class="section-title">2.2. Set SELinux to permissive</h3>
       <p>Setting SELinux to permissive mode is required to allow containers to access the host filesystem; for example, some cluster network plugins require this.
@@ -111,7 +111,7 @@ $ sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
       <p>Reboot the system and verify that SELinux is in permissive mode:</p>
       <pre class="code-block"><code class="language-bash">$ sudo reboot
 $ getenforce
-# -> Permissive
+# -&gt; Permissive
 </code></pre>
       <h3 id="2.3.-enable-ipv4-packet-forwarding" class="section-title">2.3. Enable IPv4 Packet Forwarding</h3>
       <p>By default, the Linux kernel does not allow IPv4 packets to be routed between interfaces.
@@ -231,7 +231,7 @@ kubectl \
       <h2 id="5.-add-the-linux-worker-node-to-the-kubernetes-cluster" class="chapter-title">5. Add the Linux Worker Node to the Kubernetes Cluster</h2>
       <p>Run the following command on the control plane node to retrieve the kubeadm join command:</p>
       <pre class="code-block"><code class="language-bash">$ kubeadm token create --print-join-command
-# -> This will output something like:
+# -&gt; This will output something like:
 #    kubeadm join 192.168.1.2:6443 --token &lt;token&gt; --discovery-token-ca-cert-hash sha256:&lt;hash&gt;
 </code></pre>
       <p>Run this command on the worker node (with <code class="inline-code-snippet">sudo</code>):</p>
@@ -242,7 +242,7 @@ Run <code class="inline-code-snippet">kubectl</code> on the control plane node.<
       <pre class="code-block"><code class="language-bash">$ kubectl get nodes
 NAME              STATUS   ROLES           AGE   VERSION
 control01.local   Ready    control-plane   57d   v1.35.0
-worker01.local    Ready    <none>          55s   v1.35.3
+worker01.local    Ready    &lt;none&gt;          55s   v1.35.3
 </code></pre>
       <h2 id="6.-launch-the-first-pod" class="chapter-title">6. Launch the First Pod</h2>
       <p>Now you can launch the first pod on the worker node.
@@ -252,11 +252,11 @@ Run the following command on the control plane node:</p>
       <p>You can then verify that the first pod is running on the worker node with the following command:</p>
       <pre class="code-block"><code class="language-bash">$ kubectl get pods -o wide
 NAME       READY   STATUS    RESTARTS   AGE   IP           NODE             NOMINATED NODE   READINESS GATES
-test-pod   1/1     Running   0          15s   10.244.1.2   worker01.local   <none>           <none>
+test-pod   1/1     Running   0          15s   10.244.1.2   worker01.local   &lt;none&gt;           &lt;none&gt;
 </code></pre>
       <p>You can check the pod logs; however, since it only executes the <code class="inline-code-snippet">sleep 3600</code> command, the log is empty.</p>
       <pre class="code-block"><code class="language-bash">$ kubectl logs test-pod
-# -> Should be empty.
+# -&gt; Should be empty.
 </code></pre>
       <p>You can get the details of the pod with the following command:</p>
       <pre class="code-block"><code class="language-bash">$ kubectl describe pod test-pod
@@ -267,7 +267,7 @@ Service Account:  default
 Node:             worker01.local/192.168.1.3
 Start Time:       Sun, 29 Mar 2026 22:48:28 -0700
 Labels:           run=test-pod
-Annotations:      <none>
+Annotations:      &lt;none&gt;
 Status:           Running
 IP:               10.244.1.2
 IPs:
@@ -277,8 +277,8 @@ Containers:
     Container ID:  containerd://227fcb91cb9569e8cad9ef4ab77d8c56d1e93fa87a1462638d9dfc312624df24
     Image:         busybox
     Image ID:      docker.io/library/busybox@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
-    Port:          <none>
-    Host Port:     <none>
+    Port:          &lt;none&gt;
+    Host Port:     &lt;none&gt;
     Args:
       sleep
       3600
@@ -286,7 +286,7 @@ Containers:
       Started:      Sun, 29 Mar 2026 22:48:33 -0700
     Ready:          True
     Restart Count:  0
-    Environment:    <none>
+    Environment:    &lt;none&gt;
     Mounts:
       /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-lf7js (ro)
 Conditions:
@@ -304,7 +304,7 @@ Volumes:
     Optional:                false
     DownwardAPI:             true
 QoS Class:                   BestEffort
-Node-Selectors:              <none>
+Node-Selectors:              &lt;none&gt;
 Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
                              node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
 Events:
