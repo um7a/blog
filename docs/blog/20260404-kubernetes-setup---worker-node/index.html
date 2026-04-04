@@ -232,13 +232,18 @@ kubectl \
       <p>Run the following command on the control plane node to retrieve the kubeadm join command:</p>
       <pre class="code-block"><code class="language-bash">$ kubeadm token create --print-join-command
 # -> This will output something like:
-#    kubeadm join 192.168.1.2:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+#    kubeadm join 192.168.1.2:6443 --token &lt;token&gt; --discovery-token-ca-cert-hash sha256:&lt;hash&gt;
 </code></pre>
       <p>Run this command on the worker node (with <code class="inline-code-snippet">sudo</code>):</p>
-      <pre class="code-block"><code class="language-bash">$ sudo kubeadm join 192.168.1.2:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+      <pre class="code-block"><code class="language-bash">$ sudo kubeadm join 192.168.1.2:6443 --token &lt;token&gt; --discovery-token-ca-cert-hash sha256:&lt;hash&gt;
 </code></pre>
       <p>A few seconds later, you should see the worker node in the output of <code class="inline-code-snippet">kubectl get nodes</code>.
 Run <code class="inline-code-snippet">kubectl</code> on the control plane node.</p>
+      <pre class="code-block"><code class="language-bash">$ kubectl get nodes
+NAME              STATUS   ROLES           AGE   VERSION
+control01.local   Ready    control-plane   57d   v1.35.0
+worker01.local    Ready    <none>          55s   v1.35.3
+</code></pre>
       <h2 id="6.-launch-the-first-pod" class="chapter-title">6. Launch the First Pod</h2>
       <p>Now you can launch the first pod on the worker node.
 Run the following command on the control plane node:</p>
