@@ -55,12 +55,13 @@
             <li class="toc-list-item"><a class="toc-list-item-link" href="#1.-disable-swap">1. Disable Swap</a></li>
             <li class="toc-list-item"><a class="toc-list-item-link" href="#2.-set-selinux-to-permissive">2. Set SELinux to permissive</a></li>
             <li class="toc-list-item"><a class="toc-list-item-link" href="#3.-enable-ipv4-packet-forwarding">3. Enable IPv4 packet forwarding</a></li>
-            <li class="toc-list-item"><a class="toc-list-item-link" href="#3.-enable-memory-cgroup-controller">3. Enable memory cgroup controller</a></li>
-            <li class="toc-list-item"><a class="toc-list-item-link" href="#5.-install-containerd">5. Install containerd</a></li>
-            <li class="toc-list-item"><a class="toc-list-item-link" href="#6.-install-kubernetes-components">6. Install Kubernetes components</a></li>
-            <li class="toc-list-item"><a class="toc-list-item-link" href="#7.-initialize-the-control-plane">7. Initialize the control plane</a></li>
-            <li class="toc-list-item"><a class="toc-list-item-link" href="#8.-setup-kubeconfig">8. Setup kubeconfig</a></li>
-            <li class="toc-list-item"><a class="toc-list-item-link" href="#9.-install-a-cni-(network-plugin)">9. Install a CNI (network plugin)</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#4.-enable-memory-cgroup-controller">4. Enable memory cgroup controller</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#5.-allow-port-6443-for-the-kube-apiserver">5. Allow Port 6443 for the kube-apiserver</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#6.-install-containerd">6. Install containerd</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#7.-install-kubernetes-components">7. Install Kubernetes components</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#8.-initialize-the-control-plane">8. Initialize the control plane</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#9.-setup-kubeconfig">9. Setup kubeconfig</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#10.-install-a-cni-(network-plugin)">10. Install a CNI (network plugin)</a></li>
           </ul>
         <li class="toc-list-item"><a class="toc-list-item-link" href="#what-is-next?">What is next?</a></li>
         <li class="toc-list-item"><a class="toc-list-item-link" href="#references">References</a></li>
@@ -121,7 +122,7 @@ EOF
       <p>Apply sysctl params without reboot.</p>
       <pre class="code-block"><code class="language-bash">$ sudo sysctl --system
 </code></pre>
-      <h3 id="3.-enable-memory-cgroup-controller" class="section-title">3. Enable memory cgroup controller</h3>
+      <h3 id="4.-enable-memory-cgroup-controller" class="section-title">4. Enable memory cgroup controller</h3>
       <p>In Rocky Linux 10 with Raspberry Pi environment, <code class="inline-code-snippet">cgroup_disable=memory</code> is set, but this causes an error in the initialization of kubeadm.</p>
       <p>Verify the current kernel cmdline.</p>
       <pre class="code-block"><code class="language-bash">$ cat /proc/cmdline
@@ -137,7 +138,13 @@ console=ttyAMA0,115200 console=tty1 root=LABEL=RPIROOT rootfstype=ext4 rootwait 
 $ cat /proc/cmdline
 reboot=w coherent_pool=1M 8250.nr_uarts=1 pci=pcie_bus_safe cgroup_disable=memory numa_policy=interleave bcm2708_fb.fbwidth=640 bcm2708_fb.fbheight=480 bcm2708_fb.fbdepth=16 bcm2708_fb.fbswap=1 smsc95xx.macaddr=2C:CF:67:DC:D6:11 vc_mem.mem_base=0x3fc00000 vc_mem.mem_size=0x40000000  console=ttyAMA0,115200 console=tty1 root=LABEL=RPIROOT rootfstype=ext4 rootwait cgroup_enable=memory cgroup_memory=1
 </code></pre>
-      <h3 id="5.-install-containerd" class="section-title">5. Install containerd</h3>
+      <h3 id="5.-allow-port-6443-for-the-kube-apiserver" class="section-title">5. Allow Port 6443 for the kube-apiserver</h3>
+      <p>Port 6443 of the control plane is used by users (via <code class="inline-code-snippet">kubectl</code>) and worker nodes (via <code class="inline-code-snippet">kubelet</code>).
+Allow access to this port using the following commands:</p>
+      <pre class="code-block"><code class="language-bash">$ sudo firewall-cmd --permanent --add-port=6443/tcp
+$ sudo firewall-cmd --reload
+</code></pre>
+      <h3 id="6.-install-containerd" class="section-title">6. Install containerd</h3>
       <p>Add docker-ce repo and install containerd from it.</p>
       <pre class="code-block"><code class="language-bash">$ sudo dnf install -y yum-utils
 $ sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -173,7 +180,7 @@ Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.8195
 Jan 31 21:07:34 control01.local containerd[1536]: time="2026-01-31T21:07:34.820267521-08:00" level=info msg="containerd successfully booted in 0.065157s"
 Jan 31 21:07:34 control01.local systemd[1]: Started containerd.service - containerd container runtime.
 </code></pre>
-      <h3 id="6.-install-kubernetes-components" class="section-title">6. Install Kubernetes components</h3>
+      <h3 id="7.-install-kubernetes-components" class="section-title">7. Install Kubernetes components</h3>
       <p>Add Kubernetes repo.
 The <code class="inline-code-snippet">exclude</code> parameter in the repository definition ensures that the packages related to Kubernetes are not upgraded upon running <code class="inline-code-snippet">dnf update</code> as there's a special procedure that must be followed for upgrading Kubernetes.</p>
       <pre class="code-block"><code class="language-bash">$ cat &lt;&lt;EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
@@ -196,7 +203,7 @@ kubectl \
       <p>Start and enable kubelet.</p>
       <pre class="code-block"><code class="language-bash">$ sudo systemctl enable --now kubelet
 </code></pre>
-      <h3 id="7.-initialize-the-control-plane" class="section-title">7. Initialize the control plane</h3>
+      <h3 id="8.-initialize-the-control-plane" class="section-title">8. Initialize the control plane</h3>
       <p>Execute kubeadm to initialize the control plane.
 <code class="inline-code-snippet">--pod-network-cidr</code> defines the IP range used internally for Pod IPs, which must not overlap with :</p>
       <ul>
@@ -205,7 +212,7 @@ kubectl \
       </ul>
       <pre class="code-block"><code class="language-bash">$ sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 </code></pre>
-      <h3 id="8.-setup-kubeconfig" class="section-title">8. Setup kubeconfig</h3>
+      <h3 id="9.-setup-kubeconfig" class="section-title">9. Setup kubeconfig</h3>
       <pre class="code-block"><code class="language-bash">$ mkdir -p $HOME/.kube
 $ sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
 $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
@@ -215,7 +222,7 @@ $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 NAME              STATUS     ROLES           AGE   VERSION
 control01.local   NotReady   control-plane   29s   v1.35.0
 </code></pre>
-      <h3 id="9.-install-a-cni-(network-plugin)" class="section-title">9. Install a CNI (network plugin)</h3>
+      <h3 id="10.-install-a-cni-(network-plugin)" class="section-title">10. Install a CNI (network plugin)</h3>
       <p>Load required kernel module <code class="inline-code-snippet">br_netfilter</code>.</p>
       <pre class="code-block"><code class="language-bash">$ sudo modprobe br_netfilter
 $ cat &lt;&lt;EOF | sudo tee /etc/modules-load.d/k8s.conf
