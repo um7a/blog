@@ -59,6 +59,7 @@
             <li class="toc-list-item"><a class="toc-list-item-link" href="#2.5.-load-kernel-module-for-flannel">2.5. Load kernel module for Flannel</a></li>
             <li class="toc-list-item"><a class="toc-list-item-link" href="#2.6.-set-sysctl-params-for-flannel">2.6. Set sysctl params for Flannel</a></li>
             <li class="toc-list-item"><a class="toc-list-item-link" href="#2.7.-allow-port-10250-from-the-control-plane">2.7. Allow Port 10250 from the Control Plane</a></li>
+            <li class="toc-list-item"><a class="toc-list-item-link" href="#2.8.-configure-firewall-for-pod-networking">2.8. Configure firewall for Pod networking</a></li>
           </ul>
         <li class="toc-list-item"><a class="toc-list-item-link" href="#3.-install-containerd">3. Install containerd</a></li>
         <li class="toc-list-item"><a class="toc-list-item-link" href="#4.-install-kubernetes-components-(kubeadm,-kubelet,-and-kubectl)">4. Install Kubernetes components (kubeadm, kubelet, and kubectl)</a></li>
@@ -164,6 +165,24 @@ EOF
 Allow access to this port using the following commands:</p>
       <pre class="code-block"><code class="language-bash">$ sudo firewall-cmd --permanent --add-port=10250/tcp
 $ sudo firewall-cmd --reload
+</code></pre>
+      <h3 id="2.8.-configure-firewall-for-pod-networking" class="section-title">2.8. Configure firewall for Pod networking</h3>
+      <p>If you are using Flannel as the CNI plugin, additional firewall configuration is required on each node to allow Pod-to-Pod communication across nodes.</p>
+      <p>By default, firewalld may block traffic from the Pod network, which can cause issues such as:</p>
+      <ul>
+        <li>DNS resolution failing</li>
+        <li>Service names not being resolved</li>
+        <li>Cross-node Pod communication failing</li>
+      </ul>
+      <p>Flannel uses VXLAN for encapsulation, which requires UDP port 8472.</p>
+      <pre class="code-block"><code class="language-bash">$ sudo firewall-cmd --permanent --add-port=8472/udp
+</code></pre>
+      <p>If your cluster was initialized with <code class="inline-code-snippet">--pod-network-cidr=10.244.0.0/16</code>, Pods will use that network.
+Add the Pod network to the trusted zone:</p>
+      <pre class="code-block"><code class="language-bash">$ sudo firewall-cmd --permanent --zone=trusted --add-source=10.244.0.0/16
+</code></pre>
+      <p>Apply the changes:</p>
+      <pre class="code-block"><code class="language-bash">$ sudo firewall-cmd --reload
 </code></pre>
       <p>These are the required Linux settings.
 Let's move on to the Kubernetes components installation.</p>
