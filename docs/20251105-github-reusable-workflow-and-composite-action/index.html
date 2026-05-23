@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub Reusable Workflows and Composite Actions</title>
+  
+  <meta name="description" content="In this article, I&#39;d like to delve into GitHub Actions&#39; Reusable Workflows and Composite Actions.
+">
+  
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #ffffff;
+      --text: #242424;
+      --muted: #6b6b6b;
+      --border: #f2f2f2;
+      --active-border: #242424;
+      --accent: #242424;
+      --code-background: #f7f7f7;
+      --code-token-comment: #6a737d;
+      --code-token-punctuation: #24292e;
+      --code-token-property: #005cc5;
+      --code-token-string: #032f62;
+      --code-token-keyword: #d73a49;
+      --code-token-function: #6f42c1;
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 52px 24px 72px;
+    }
+
+    .article {
+      max-width: 760px;
+    }
+
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 64px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .back-home:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .back-home-icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .back-home-text {
+      margin-left: -2px;
+    }
+
+    .article-header {
+      margin-bottom: 40px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .article-title {
+      margin: 0;
+      font-size: clamp(2rem, 4.2vw, 3rem);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    .article-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .article-author {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: var(--text);
+    }
+
+    .article-author-icon {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .article-author-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .article-meta-separator {
+      color: var(--muted);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px 9px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .tag-icon {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+    }
+
+    .table-of-contents-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .table-of-contents-list li {
+      display: grid;
+      grid-template-columns: max-content auto;
+      column-gap: 0.6em;
+    }
+
+    .table-of-contents-list a {
+      color: inherit;
+      justify-self: start;
+      text-decoration: none;
+    }
+
+    .table-of-contents-list a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .table-of-contents-list .toc-depth-2 {
+      padding-left: 1.5rem;
+    }
+
+    .table-of-contents-list .toc-depth-3 {
+      padding-left: 3rem;
+    }
+
+    .content h2,
+    .content h3,
+    .content h4 {
+      margin-top: 2em;
+      line-height: 1.25;
+    }
+
+    .content a {
+      color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    .content img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .content pre {
+      overflow-x: auto;
+      padding: 16px;
+      border-radius: 6px;
+      background: var(--code-background);
+    }
+
+    .content code {
+      border-radius: 4px;
+      background: var(--code-background);
+      padding: 0.1em 0.3em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    .content pre code {
+      padding: 0;
+      background: transparent;
+    }
+
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      color: var(--code-token-comment);
+    }
+
+    .token.punctuation {
+      color: var(--code-token-punctuation);
+    }
+
+    .token.property,
+    .token.tag,
+    .token.boolean,
+    .token.number,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: var(--code-token-property);
+    }
+
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: var(--code-token-string);
+    }
+
+    .token.operator,
+    .token.entity,
+    .token.url,
+    .language-css .token.string,
+    .style .token.string {
+      color: var(--code-token-keyword);
+    }
+
+    .token.atrule,
+    .token.attr-value,
+    .token.keyword {
+      color: var(--code-token-keyword);
+    }
+
+    .token.function,
+    .token.class-name {
+      color: var(--code-token-function);
+    }
+
+    .content blockquote {
+      margin-left: 0;
+      padding-left: 18px;
+      border-left: 2px solid var(--active-border);
+      color: var(--muted);
+    }
+
+    .content table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow-wrap: anywhere;
+    }
+
+    .content th,
+    .content td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .content th {
+      background: var(--code-background);
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 32px 18px 52px;
+      }
+
+      .article {
+        max-width: none;
+      }
+
+      .back-home {
+        margin-bottom: 48px;
+      }
+
+      .article-title {
+        font-size: 1.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <a class="back-home" href="../index.html">
+      <img class="back-home-icon" src="../images/chevron-left.svg" alt="" width="24" height="24" aria-hidden="true">
+      <span class="back-home-text">Back to Home</span>
+    </a>
+
+    <article class="article">
+      <header class="article-header">
+        <h1 class="article-title">GitHub Reusable Workflows and Composite Actions</h1>
+        <div class="article-meta">
+          
+          
+          
+          <span>4 min read</span>
+          
+          
+          
+          <span class="article-meta-separator">·</span>
+          
+          
+          <time datetime="Wed Nov 05 2025 17:00:00 GMT+0900 (Japan Standard Time)">Nov 5, 2025</time>
+          
+        </div>
+        
+        <ul class="tags" aria-label="Tags">
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>GitHub</span>
+          </li>
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>GitHub Action</span>
+          </li>
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>CI/CD</span>
+          </li>
+          
+        </ul>
+        
+      </header>
+      
+      <nav aria-label="Table of contents">
+        <h2>Table of contents</h2>
+        <ul class="table-of-contents-list">
+          <li class="toc-depth-1">
+            <span>1.</span> <a href="#what-are-reusable-workflows-and-composite-actions">What Are Reusable Workflows and Composite Actions</a>
+          </li><li class="toc-depth-1">
+            <span>2.</span> <a href="#creating-a-reusable-workflow">Creating a Reusable Workflow</a>
+          </li><li class="toc-depth-1">
+            <span>3.</span> <a href="#calling-a-reusable-workflow">Calling a Reusable Workflow</a>
+          </li><li class="toc-depth-1">
+            <span>4.</span> <a href="#limitations-of-reusable-workflows">Limitations of Reusable Workflows</a>
+          </li><li class="toc-depth-1">
+            <span>5.</span> <a href="#creating-a-composite-action">Creating a Composite Action</a>
+          </li><li class="toc-depth-1">
+            <span>6.</span> <a href="#calling-a-composite-action">Calling a Composite Action</a>
+          </li><li class="toc-depth-1">
+            <span>7.</span> <a href="#limitations-of-composite-actions">Limitations of Composite Actions</a>
+          </li><li class="toc-depth-1">
+            <span>8.</span> <a href="#when-to-use-each">When to Use Each</a>
+          </li><li class="toc-depth-1">
+            <span>9.</span> <a href="#conclusion">Conclusion</a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="content">
+        <h1 id="what-are-reusable-workflows-and-composite-actions">What Are Reusable Workflows and Composite Actions</h1>
+<p>Creating <strong>reusable workflows</strong> and <strong>composite actions</strong> allows you to centralize and standardize repetitive steps in your development process.</p>
+<p><strong>Reusable workflows</strong> allow you to define a workflow template that can be reused across multiple repositories.</p>
+<p><strong>Composite actions</strong> allow you to encapsulate a sequence of steps into a single action, which can be reused across multiple workflows and repositories.</p>
+<h1 id="creating-a-reusable-workflow">Creating a Reusable Workflow</h1>
+<p>Let's create a new repository for a reusable workflow in your organization.
+You can create a repository under your personal account. However, there are a few important differences to be aware of.</p>
+<ul>
+<li>Public repo : Any workflow in any repository.</li>
+<li>Private repo (under your personal account) : Only workflows in the <strong>same repository</strong>.</li>
+<li>Private repo (in organization) : Workflows in other repos within the same organization.</li>
+</ul>
+<p>Next, let's create a directory <code>.github/workflows</code> and place a <code>build-nodejs.yml</code> in it.</p>
+<pre><code class="code-highlight"><span class="code-line">.github
+</span><span class="code-line">└── workflows
+</span><span class="code-line">    └── build-nodejs.yml
+</span></code></pre>
+<p>A reusable workflow is almost identical to a normal workflow, except that it is triggered exclusively by the <code>workflow_call</code> event:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">on</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">workflow_call</span><span class="token punctuation">:</span>
+</span></code></pre>
+<p>The following is a sample reusable workflow (<code>.github/workflows/build-nodejs.yml</code>) :</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">name</span><span class="token punctuation">:</span> Node.js CI Reusable workflow
+</span><span class="code-line">
+</span><span class="code-line"><span class="token key atrule">on</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">workflow_call</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">inputs</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">node-version</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+</span><span class="code-line">        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Node.js version to use'</span>
+</span><span class="code-line">        <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+</span><span class="code-line">        <span class="token key atrule">default</span><span class="token punctuation">:</span> latest
+</span><span class="code-line">
+</span><span class="code-line"><span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">build</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">runs-on</span><span class="token punctuation">:</span> ubuntu<span class="token punctuation">-</span>latest
+</span><span class="code-line">    <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Checkout code
+</span><span class="code-line">      <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/checkout@v3
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Use Node.js $<span class="token punctuation">{</span><span class="token punctuation">{</span> inputs<span class="token punctuation">[</span><span class="token string">'node-version'</span><span class="token punctuation">]</span> <span class="token punctuation">}</span><span class="token punctuation">}</span>
+</span><span class="code-line">      <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/setup<span class="token punctuation">-</span>node@v4
+</span><span class="code-line">      <span class="token key atrule">with</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">node-version</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span><span class="token punctuation">{</span> inputs<span class="token punctuation">[</span><span class="token string">'node-version'</span><span class="token punctuation">]</span> <span class="token punctuation">}</span><span class="token punctuation">}</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Run ci
+</span><span class="code-line">      <span class="token key atrule">run</span><span class="token punctuation">:</span> npm ci
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Run build
+</span><span class="code-line">      <span class="token key atrule">run</span><span class="token punctuation">:</span> npm run build <span class="token punctuation">-</span><span class="token punctuation">-</span>if<span class="token punctuation">-</span>present
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Run test
+</span><span class="code-line">      <span class="token key atrule">run</span><span class="token punctuation">:</span> npm test
+</span></code></pre>
+<h1 id="calling-a-reusable-workflow">Calling a Reusable Workflow</h1>
+<p>To call a reusable workflow from another workflow, specify it with  <code>uses: &#x3C;user>/&#x3C;repo>/.github/workflows/&#x3C;file>@&#x3C;ref></code> syntax in a job definition.
+The following is a sample workflow calls a reusable workflow.</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">name</span><span class="token punctuation">:</span> Workflow example calls reusable workflow
+</span><span class="code-line"><span class="token key atrule">on</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">workflow_dispatch</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">push</span><span class="token punctuation">:</span>
+</span><span class="code-line">
+</span><span class="code-line"><span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">ci</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">name</span><span class="token punctuation">:</span> run build process
+</span><span class="code-line">    <span class="token key atrule">uses</span><span class="token punctuation">:</span> &#x3C;user<span class="token punctuation">></span>/&#x3C;repo<span class="token punctuation">></span>/.github/workflows/build<span class="token punctuation">-</span>nodejs.yml@main
+</span><span class="code-line">    <span class="token key atrule">with</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">node-version</span><span class="token punctuation">:</span> <span class="token string">'latest'</span> <span class="token comment"># Node.js version to use (e.g., '22', '24', 'latest')</span>
+</span></code></pre>
+<h1 id="limitations-of-reusable-workflows">Limitations of Reusable Workflows</h1>
+<ul>
+<li>
+<p>Environment variables set at the caller level cannot be accessed within the reusable workflow and vice versa.</p>
+</li>
+<li>
+<p>A reusable workflow cannot call another reusable workflow.</p>
+</li>
+<li>
+<p>A single workflow cannot call more than 20 reusable workflows.</p>
+</li>
+</ul>
+<h1 id="creating-a-composite-action">Creating a Composite Action</h1>
+<p>You can store a composite action in an existing or new repository.
+Create a directory such as <code>.github/actions/build-nodejs</code> and place an <code>action.yml</code> in it.
+The directory name <code>build-nodejs</code> will be used as the name of the action.</p>
+<pre><code class="code-highlight"><span class="code-line">.github
+</span><span class="code-line">└── actions
+</span><span class="code-line">    └── build-nodejs
+</span><span class="code-line">        └── action.yml
+</span></code></pre>
+<p>The following is a sample composite action (<code>.github/actions/build-nodejs/action.yml</code>) :</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">'Node.js CI Composite action'</span>
+</span><span class="code-line"><span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Node.js CI'</span>
+</span><span class="code-line"><span class="token key atrule">inputs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">node-version</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Node.js version to use'</span>
+</span><span class="code-line">    <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+</span><span class="code-line">    <span class="token key atrule">default</span><span class="token punctuation">:</span> latest
+</span><span class="code-line">
+</span><span class="code-line"><span class="token key atrule">runs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">using</span><span class="token punctuation">:</span> <span class="token string">'composite'</span>  <span class="token comment"># Specify this is a composite action</span>
+</span><span class="code-line">  <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Checkout code
+</span><span class="code-line">      <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/checkout@v3
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Use Node.js "$<span class="token punctuation">{</span><span class="token punctuation">{</span> inputs.node<span class="token punctuation">-</span>version <span class="token punctuation">}</span><span class="token punctuation">}</span>"
+</span><span class="code-line">      <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/setup<span class="token punctuation">-</span>node@v4
+</span><span class="code-line">      <span class="token key atrule">with</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">node-version</span><span class="token punctuation">:</span> <span class="token string">"${{ inputs.node-version }}"</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Run ci
+</span><span class="code-line">      <span class="token key atrule">run</span><span class="token punctuation">:</span> npm ci
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Run build
+</span><span class="code-line">      <span class="token key atrule">run</span><span class="token punctuation">:</span> npm run build <span class="token punctuation">-</span><span class="token punctuation">-</span>if<span class="token punctuation">-</span>present
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Run test
+</span><span class="code-line">      <span class="token key atrule">run</span><span class="token punctuation">:</span> npm test
+</span></code></pre>
+<h1 id="calling-a-composite-action">Calling a Composite Action</h1>
+<p>The following is a sample workflow calls a composite action :</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">name</span><span class="token punctuation">:</span> Workflow example calls composite action 
+</span><span class="code-line"><span class="token key atrule">on</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">workflow_dispatch</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">push</span><span class="token punctuation">:</span>
+</span><span class="code-line">
+</span><span class="code-line"><span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">ci</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">name</span><span class="token punctuation">:</span> run build process
+</span><span class="code-line">    <span class="token key atrule">uses</span><span class="token punctuation">:</span> &#x3C;user<span class="token punctuation">></span>/&#x3C;repo<span class="token punctuation">></span>/.github/actions/build<span class="token punctuation">-</span>nodejs@main
+</span></code></pre>
+<h1 id="limitations-of-composite-actions">Limitations of Composite Actions</h1>
+<ul>
+<li>
+<p>Composite actions cannot directly access repository secrets; they inherit them from the calling workflow.</p>
+</li>
+<li>
+<p>Composite actions cannot modify the environment or context in which they run.</p>
+</li>
+<li>
+<p>Composite actions do not have built-in concurrency control. Concurrency control must be managed at the workflow level.</p>
+</li>
+<li>
+<p>A composite action has a nesting limit of 20 levels, with the initial calling action counted as one of those levels.</p>
+</li>
+</ul>
+<h1 id="when-to-use-each">When to Use Each</h1>
+<p>Use reusable workflows when:</p>
+<ul>
+<li>You want to reuse entire jobs or pipelines (like build → test → deploy).</li>
+<li>You want to control over permissions, concurrency, matrix builds, or secrets.</li>
+</ul>
+<p>Use composite actions when:</p>
+<ul>
+<li>You want to reuse a sequence of steps inside a single job.</li>
+<li>You don't need to define jobs or control permissions/secrets.</li>
+</ul>
+<h1 id="conclusion">Conclusion</h1>
+<p>Reusable workflows and composite actions make GitHub Actions more modular and maintainable.
+Use reusable workflows for full pipelines and composite actions for smaller step sequences.
+Choosing the right one helps keep your automation clean, reusable, and easy to manage.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

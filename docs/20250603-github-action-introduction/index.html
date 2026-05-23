@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Understanding GitHub Actions</title>
+  
+  <meta name="description" content="In this article, I&#39;d like to delve into GitHub Actions.
+">
+  
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #ffffff;
+      --text: #242424;
+      --muted: #6b6b6b;
+      --border: #f2f2f2;
+      --active-border: #242424;
+      --accent: #242424;
+      --code-background: #f7f7f7;
+      --code-token-comment: #6a737d;
+      --code-token-punctuation: #24292e;
+      --code-token-property: #005cc5;
+      --code-token-string: #032f62;
+      --code-token-keyword: #d73a49;
+      --code-token-function: #6f42c1;
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 52px 24px 72px;
+    }
+
+    .article {
+      max-width: 760px;
+    }
+
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 64px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .back-home:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .back-home-icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .back-home-text {
+      margin-left: -2px;
+    }
+
+    .article-header {
+      margin-bottom: 40px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .article-title {
+      margin: 0;
+      font-size: clamp(2rem, 4.2vw, 3rem);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    .article-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .article-author {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: var(--text);
+    }
+
+    .article-author-icon {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .article-author-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .article-meta-separator {
+      color: var(--muted);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px 9px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .tag-icon {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+    }
+
+    .table-of-contents-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .table-of-contents-list li {
+      display: grid;
+      grid-template-columns: max-content auto;
+      column-gap: 0.6em;
+    }
+
+    .table-of-contents-list a {
+      color: inherit;
+      justify-self: start;
+      text-decoration: none;
+    }
+
+    .table-of-contents-list a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .table-of-contents-list .toc-depth-2 {
+      padding-left: 1.5rem;
+    }
+
+    .table-of-contents-list .toc-depth-3 {
+      padding-left: 3rem;
+    }
+
+    .content h2,
+    .content h3,
+    .content h4 {
+      margin-top: 2em;
+      line-height: 1.25;
+    }
+
+    .content a {
+      color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    .content img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .content pre {
+      overflow-x: auto;
+      padding: 16px;
+      border-radius: 6px;
+      background: var(--code-background);
+    }
+
+    .content code {
+      border-radius: 4px;
+      background: var(--code-background);
+      padding: 0.1em 0.3em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    .content pre code {
+      padding: 0;
+      background: transparent;
+    }
+
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      color: var(--code-token-comment);
+    }
+
+    .token.punctuation {
+      color: var(--code-token-punctuation);
+    }
+
+    .token.property,
+    .token.tag,
+    .token.boolean,
+    .token.number,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: var(--code-token-property);
+    }
+
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: var(--code-token-string);
+    }
+
+    .token.operator,
+    .token.entity,
+    .token.url,
+    .language-css .token.string,
+    .style .token.string {
+      color: var(--code-token-keyword);
+    }
+
+    .token.atrule,
+    .token.attr-value,
+    .token.keyword {
+      color: var(--code-token-keyword);
+    }
+
+    .token.function,
+    .token.class-name {
+      color: var(--code-token-function);
+    }
+
+    .content blockquote {
+      margin-left: 0;
+      padding-left: 18px;
+      border-left: 2px solid var(--active-border);
+      color: var(--muted);
+    }
+
+    .content table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow-wrap: anywhere;
+    }
+
+    .content th,
+    .content td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .content th {
+      background: var(--code-background);
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 32px 18px 52px;
+      }
+
+      .article {
+        max-width: none;
+      }
+
+      .back-home {
+        margin-bottom: 48px;
+      }
+
+      .article-title {
+        font-size: 1.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <a class="back-home" href="../index.html">
+      <img class="back-home-icon" src="../images/chevron-left.svg" alt="" width="24" height="24" aria-hidden="true">
+      <span class="back-home-text">Back to Home</span>
+    </a>
+
+    <article class="article">
+      <header class="article-header">
+        <h1 class="article-title">Understanding GitHub Actions</h1>
+        <div class="article-meta">
+          
+          
+          
+          <span>4 min read</span>
+          
+          
+          
+          <span class="article-meta-separator">·</span>
+          
+          
+          <time datetime="Tue Jun 03 2025 16:00:00 GMT+0900 (Japan Standard Time)">Jun 3, 2025</time>
+          
+        </div>
+        
+        <ul class="tags" aria-label="Tags">
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>GitHub</span>
+          </li>
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>GitHub Action</span>
+          </li>
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>CI/CD</span>
+          </li>
+          
+        </ul>
+        
+      </header>
+      
+      <nav aria-label="Table of contents">
+        <h2>Table of contents</h2>
+        <ul class="table-of-contents-list">
+          <li class="toc-depth-1">
+            <span>1.</span> <a href="#introduction">Introduction</a>
+          </li><li class="toc-depth-1">
+            <span>2.</span> <a href="#components-of-github-actions">Components of GitHub Actions</a>
+          </li><li class="toc-depth-1">
+            <span>3.</span> <a href="#workflows">Workflows</a>
+          </li><li class="toc-depth-2">
+            <span>3.1.</span> <a href="#properties-of-workflows">Properties of workflows</a>
+          </li><li class="toc-depth-1">
+            <span>4.</span> <a href="#jobs">Jobs</a>
+          </li><li class="toc-depth-2">
+            <span>4.1.</span> <a href="#properties-of-jobs">Properties of jobs</a>
+          </li><li class="toc-depth-1">
+            <span>5.</span> <a href="#steps">Steps</a>
+          </li><li class="toc-depth-2">
+            <span>5.1.</span> <a href="#properties-of-steps">Properties of steps</a>
+          </li><li class="toc-depth-1">
+            <span>6.</span> <a href="#conclusion">Conclusion</a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="content">
+        <h1 id="introduction">Introduction</h1>
+<p>In this article, I'd like to delve into GitHub Actions.</p>
+<h1 id="components-of-github-actions">Components of GitHub Actions</h1>
+<p>The followings are the components of GitHub Actions.</p>
+<ul>
+<li>
+<p><strong>Workflow</strong><br>
+Workflows enable you to automate various tasks such as building, testing, and deploying code.
+A workflow is defined using a YAML file in your repository's <code>.github/workflows</code> directory.</p>
+</li>
+<li>
+<p><strong>Event</strong><br>
+Events trigger workflows.
+You can specify event names in a workflow's YAML file to trigger the workflow with the events.
+Events can be grouped into the following categories:</p>
+<ul>
+<li>
+<p><strong>Code-related events</strong><br>
+These events are related with code changes.<br>
+These events include <code>push</code>, <code>pull_request</code>, <code>pull_request_review</code>.</p>
+</li>
+<li>
+<p><strong>Issue and project management events</strong><br>
+These events are related to issue tracking and project management.<br>
+These events include <code>issues</code>, <code>issue_comment</code>, <code>milestone</code>.</p>
+</li>
+<li>
+<p><strong>Scheduled events</strong><br>
+These events are triggered based on a schedule. They alow you to run workflows at specific intervals.<br>
+These events include <code>schedule</code>.</p>
+</li>
+<li>
+<p><strong>Manual events</strong><br>
+These events are triggered manually. They allow you to run workflows on-demand.<br>
+These events include <code>workflow_dispatch</code>.</p>
+</li>
+<li>
+<p><strong>Repository and organization management events</strong><br>
+These events are related to repository or organization management.<br>
+These events include <code>repository</code>, <code>team</code>, <code>organization</code>.</p>
+</li>
+<li>
+<p><strong>External events</strong><br>
+These events are triggered from external services.<br>
+These events include <code>repository_dispatch</code>, <code>workflow_run</code>.</p>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Job</strong><br>
+A job represents a set of related steps you want to execute in a workflow.</p>
+</li>
+<li>
+<p><strong>Step</strong><br>
+Steps are the sequence of tasks, such as checking out code and running a script.</p>
+</li>
+</ul>
+<p>Let's delve into each component.</p>
+<h1 id="workflows">Workflows</h1>
+<p>Let's create a new repository and add <code>.github/workflows/nodejs.yml</code> to it.</p>
+<pre><code class="code-highlight"><span class="code-line">.github
+</span><span class="code-line">└── workflows
+</span><span class="code-line">    └── nodejs.yml
+</span></code></pre>
+<p>The following is an example workflow for building and testing a Node.js application.</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">name</span><span class="token punctuation">:</span> Node.js CI
+</span><span class="code-line"><span class="token key atrule">run-name</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span><span class="token punctuation">{</span> github.actor <span class="token punctuation">}</span><span class="token punctuation">}</span> is running Node.js CI
+</span><span class="code-line"><span class="token key atrule">on</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>push<span class="token punctuation">]</span>
+</span><span class="code-line"><span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">build</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">runs-on</span><span class="token punctuation">:</span> ubuntu<span class="token punctuation">-</span>latest
+</span><span class="code-line">    <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/checkout@v4
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/setup<span class="token punctuation">-</span>node@v4
+</span><span class="code-line">        <span class="token key atrule">with</span><span class="token punctuation">:</span>
+</span><span class="code-line">          <span class="token key atrule">node-version</span><span class="token punctuation">:</span> <span class="token string">'20.x'</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm ci
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm run build <span class="token punctuation">-</span><span class="token punctuation">-</span>if<span class="token punctuation">-</span>present
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm test
+</span></code></pre>
+<h2 id="properties-of-workflows">Properties of workflows</h2>
+<p>The following properties are available for configuring workflows:</p>
+<ul>
+<li>
+<p><strong>name</strong><br>
+The name of the workflow as it will appear in the "Actions" tab of the GitHub repository. If this field is omitted, the name of the workflow file will be used instead.</p>
+</li>
+<li>
+<p><strong>run-name</strong><br>
+The name for workflow runs generated from the workflow, which will appear in the list of workflow runs on your repository's "Actions" tab.</p>
+</li>
+<li>
+<p><strong>on</strong><br>
+Specifies the trigger for this workflow. The above example uses the <code>push</code> event, so a workflow run is triggered every time someone pushes a change to the repository or merges a pull request.</p>
+<p>You can specify options for events. For example, the following configuration specifies branch names for the <code>push</code> event that trigger the workflow:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">on</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">push</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">branches</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> main
+</span><span class="code-line">      <span class="token punctuation">-</span> releases/<span class="token important">**</span>
+</span></code></pre>
+<p>You can also specify multiple events. With the following setting, workflow run is triggered by <code>push</code> and <code>pull_request</code> event.</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">on</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">push</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">branches</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> main
+</span><span class="code-line">      <span class="token punctuation">-</span> releases/<span class="token important">**</span>
+</span><span class="code-line">  <span class="token key atrule">pull_request</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">types</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> opened
+</span><span class="code-line">      <span class="token punctuation">-</span> reopened
+</span></code></pre>
+</li>
+<li>
+<p><strong>jobs</strong><br>
+Specifies all the jobs that run in the workflow.</p>
+</li>
+</ul>
+<h1 id="jobs">Jobs</h1>
+<p>Jobs are defined in <code>jobs</code> property of workflow YAML file.</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">build</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">runs-on</span><span class="token punctuation">:</span> ubuntu<span class="token punctuation">-</span>latest
+</span><span class="code-line">    <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/checkout@v4
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/setup<span class="token punctuation">-</span>node@v4
+</span><span class="code-line">        <span class="token key atrule">with</span><span class="token punctuation">:</span>
+</span><span class="code-line">          <span class="token key atrule">node-version</span><span class="token punctuation">:</span> <span class="token string">'20.x'</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm ci
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm run build <span class="token punctuation">-</span><span class="token punctuation">-</span>if<span class="token punctuation">-</span>present
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm test
+</span></code></pre>
+<h2 id="properties-of-jobs">Properties of jobs</h2>
+<p>The properties of <code>jobs</code> include the following:</p>
+<ul>
+<li>
+<p><strong>Job name</strong><br>
+In the above configuration, <code>build</code> is the name of the job.
+You can specify arbitrary name for the job.</p>
+</li>
+<li>
+<p><strong>runs-on</strong><br>
+Specifies the name of the runner on which the job will be executed.
+You can specify a GitHub-hosted runner, or a self-hosted runner.</p>
+</li>
+<li>
+<p><strong>steps</strong><br>
+Specifies all the steps that run in the job.</p>
+</li>
+<li>
+<p><strong>needs</strong><br>
+Jobs within a workflow run in parallel by default. If you want to define dependencies between jobs, you can use <code>needs</code> property with a job name.</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">build</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">runs-on</span><span class="token punctuation">:</span> ubuntu<span class="token punctuation">-</span>lates
+</span><span class="code-line">    <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">...</span>
+</span><span class="code-line">  <span class="token key atrule">test</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">needs</span><span class="token punctuation">:</span> build
+</span><span class="code-line">    <span class="token key atrule">runs-on</span><span class="token punctuation">:</span> ubuntu<span class="token punctuation">-</span>lates
+</span><span class="code-line">    <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">...</span>
+</span></code></pre>
+</li>
+</ul>
+<h1 id="steps">Steps</h1>
+<p>Steps are defined in <code>steps</code> property as the member of <code>jobs</code> property.</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">build</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">...</span>
+</span><span class="code-line">    <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/checkout@v4
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/setup<span class="token punctuation">-</span>node@v4
+</span><span class="code-line">        <span class="token key atrule">with</span><span class="token punctuation">:</span>
+</span><span class="code-line">          <span class="token key atrule">node-version</span><span class="token punctuation">:</span> <span class="token string">'20.x'</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm ci
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm run build <span class="token punctuation">-</span><span class="token punctuation">-</span>if<span class="token punctuation">-</span>present
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">run</span><span class="token punctuation">:</span> npm test
+</span></code></pre>
+<h2 id="properties-of-steps">Properties of steps</h2>
+<p>The properties of <code>steps</code> include the following:</p>
+<ul>
+<li>
+<p><strong>run</strong><br>
+Specify the command or script to execute.</p>
+</li>
+<li>
+<p><strong>uses</strong><br>
+Specify the identifier of the action to use. Built-in actions are provided by GitHub. Community and third-party actions are also available. It's identifier is the format of <code>&#x3C;user>/&#x3C;repo>@&#x3C;version></code>.</p>
+</li>
+<li>
+<p><strong>with</strong><br>
+Specify a set of parameters to pass to the action.</p>
+</li>
+<li>
+<p><strong>if</strong><br>
+Specify a conditional expression that determines whether the step should be executed.</p>
+</li>
+</ul>
+<h1 id="conclusion">Conclusion</h1>
+<p>Now you know how to use GitHub Actions, go ahead and set up a comfortable and efficient CI environment that works best for you!</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

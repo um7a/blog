@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kubernetes Setup - Worker Node</title>
+  
+  <meta name="description" content="In this post, I will walk you through how to set up a Kubernetes worker node on Rocky Linux 10 with a Raspberry Pi 4.
+">
+  
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #ffffff;
+      --text: #242424;
+      --muted: #6b6b6b;
+      --border: #f2f2f2;
+      --active-border: #242424;
+      --accent: #242424;
+      --code-background: #f7f7f7;
+      --code-token-comment: #6a737d;
+      --code-token-punctuation: #24292e;
+      --code-token-property: #005cc5;
+      --code-token-string: #032f62;
+      --code-token-keyword: #d73a49;
+      --code-token-function: #6f42c1;
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 52px 24px 72px;
+    }
+
+    .article {
+      max-width: 760px;
+    }
+
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 64px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .back-home:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .back-home-icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .back-home-text {
+      margin-left: -2px;
+    }
+
+    .article-header {
+      margin-bottom: 40px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .article-title {
+      margin: 0;
+      font-size: clamp(2rem, 4.2vw, 3rem);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    .article-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .article-author {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: var(--text);
+    }
+
+    .article-author-icon {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .article-author-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .article-meta-separator {
+      color: var(--muted);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px 9px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .tag-icon {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+    }
+
+    .table-of-contents-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .table-of-contents-list li {
+      display: grid;
+      grid-template-columns: max-content auto;
+      column-gap: 0.6em;
+    }
+
+    .table-of-contents-list a {
+      color: inherit;
+      justify-self: start;
+      text-decoration: none;
+    }
+
+    .table-of-contents-list a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .table-of-contents-list .toc-depth-2 {
+      padding-left: 1.5rem;
+    }
+
+    .table-of-contents-list .toc-depth-3 {
+      padding-left: 3rem;
+    }
+
+    .content h2,
+    .content h3,
+    .content h4 {
+      margin-top: 2em;
+      line-height: 1.25;
+    }
+
+    .content a {
+      color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    .content img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .content pre {
+      overflow-x: auto;
+      padding: 16px;
+      border-radius: 6px;
+      background: var(--code-background);
+    }
+
+    .content code {
+      border-radius: 4px;
+      background: var(--code-background);
+      padding: 0.1em 0.3em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    .content pre code {
+      padding: 0;
+      background: transparent;
+    }
+
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      color: var(--code-token-comment);
+    }
+
+    .token.punctuation {
+      color: var(--code-token-punctuation);
+    }
+
+    .token.property,
+    .token.tag,
+    .token.boolean,
+    .token.number,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: var(--code-token-property);
+    }
+
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: var(--code-token-string);
+    }
+
+    .token.operator,
+    .token.entity,
+    .token.url,
+    .language-css .token.string,
+    .style .token.string {
+      color: var(--code-token-keyword);
+    }
+
+    .token.atrule,
+    .token.attr-value,
+    .token.keyword {
+      color: var(--code-token-keyword);
+    }
+
+    .token.function,
+    .token.class-name {
+      color: var(--code-token-function);
+    }
+
+    .content blockquote {
+      margin-left: 0;
+      padding-left: 18px;
+      border-left: 2px solid var(--active-border);
+      color: var(--muted);
+    }
+
+    .content table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow-wrap: anywhere;
+    }
+
+    .content th,
+    .content td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .content th {
+      background: var(--code-background);
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 32px 18px 52px;
+      }
+
+      .article {
+        max-width: none;
+      }
+
+      .back-home {
+        margin-bottom: 48px;
+      }
+
+      .article-title {
+        font-size: 1.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <a class="back-home" href="../index.html">
+      <img class="back-home-icon" src="../images/chevron-left.svg" alt="" width="24" height="24" aria-hidden="true">
+      <span class="back-home-text">Back to Home</span>
+    </a>
+
+    <article class="article">
+      <header class="article-header">
+        <h1 class="article-title">Kubernetes Setup - Worker Node</h1>
+        <div class="article-meta">
+          
+          <span class="article-author">
+            <img class="article-author-icon" src="../images/um7a.png" alt="" width="32" height="32">
+            <span class="article-author-name">um7a</span>
+          </span>
+          
+          
+          
+          <span class="article-meta-separator">·</span>
+          
+          <span>8 min read</span>
+          
+          
+          
+          <span class="article-meta-separator">·</span>
+          
+          
+          <time datetime="Sat Apr 04 2026 17:00:00 GMT+0900 (Japan Standard Time)">Apr 4, 2026</time>
+          
+        </div>
+        
+        <ul class="tags" aria-label="Tags">
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>Kubernetes</span>
+          </li>
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>Raspberry Pi</span>
+          </li>
+          
+        </ul>
+        
+      </header>
+      
+      <nav aria-label="Table of contents">
+        <h2>Table of contents</h2>
+        <ul class="table-of-contents-list">
+          <li class="toc-depth-1">
+            <span>1.</span> <a href="#overview">Overview</a>
+          </li><li class="toc-depth-1">
+            <span>2.</span> <a href="#configuration">Configuration</a>
+          </li><li class="toc-depth-1">
+            <span>3.</span> <a href="#linux-settings-for-a-kubernetes-worker-node">Linux Settings for a Kubernetes Worker Node</a>
+          </li><li class="toc-depth-2">
+            <span>3.1.</span> <a href="#disable-swap">Disable Swap</a>
+          </li><li class="toc-depth-2">
+            <span>3.2.</span> <a href="#set-selinux-to-permissive">Set SELinux to permissive</a>
+          </li><li class="toc-depth-2">
+            <span>3.3.</span> <a href="#enable-ipv4-packet-forwarding">Enable IPv4 Packet Forwarding</a>
+          </li><li class="toc-depth-2">
+            <span>3.4.</span> <a href="#enable-memory-cgroup-controller">Enable memory cgroup controller</a>
+          </li><li class="toc-depth-2">
+            <span>3.5.</span> <a href="#load-kernel-module-for-flannel">Load kernel module for Flannel</a>
+          </li><li class="toc-depth-2">
+            <span>3.6.</span> <a href="#set-sysctl-params-for-flannel">Set sysctl params for Flannel</a>
+          </li><li class="toc-depth-2">
+            <span>3.7.</span> <a href="#allow-port-10250-from-the-control-plane">Allow Port 10250 from the Control Plane</a>
+          </li><li class="toc-depth-2">
+            <span>3.8.</span> <a href="#configure-firewall-for-pod-networking">Configure firewall for Pod networking</a>
+          </li><li class="toc-depth-1">
+            <span>4.</span> <a href="#install-containerd">Install containerd</a>
+          </li><li class="toc-depth-1">
+            <span>5.</span> <a href="#install-kubernetes-components-kubeadm-kubelet-and-kubectl">Install Kubernetes components (kubeadm, kubelet, and kubectl)</a>
+          </li><li class="toc-depth-1">
+            <span>6.</span> <a href="#add-the-linux-worker-node-to-the-kubernetes-cluster">Add the Linux Worker Node to the Kubernetes Cluster</a>
+          </li><li class="toc-depth-1">
+            <span>7.</span> <a href="#launch-the-first-pod">Launch the First Pod</a>
+          </li><li class="toc-depth-1">
+            <span>8.</span> <a href="#references">References</a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="content">
+        <h1 id="overview">Overview</h1>
+<p>In this post, I will walk you through how to set up a Kubernetes worker node on Rocky Linux 10 with a Raspberry Pi 4.</p>
+<p>Here's the overall flow of the setup:</p>
+<ul>
+<li>Configure the Linux system required for a Kubernetes worker node</li>
+<li>Install the container runtime (containerd)</li>
+<li>Install Kubernetes components (kubeadm, kubelet, and kubectl)</li>
+<li>Join the worker node to the Kubernetes cluster</li>
+</ul>
+<p>Let's dive into the setup.</p>
+<h1 id="configuration">Configuration</h1>
+<ul>
+<li>Hardware : Raspberry Pi 4 (8GB RAM)</li>
+<li>OS : Rocky Linux 10</li>
+</ul>
+<h1 id="linux-settings-for-a-kubernetes-worker-node">Linux Settings for a Kubernetes Worker Node</h1>
+<h2 id="disable-swap">Disable Swap</h2>
+<p>The default behavior of kubelet is to fail to start if swap memory is detected on a node.
+This means that swap should either be disabled or explicitly tolerated by kubelet.
+I chose the former.</p>
+<p>However, things are a bit different on Rocky Linux running on a Raspberry Pi.</p>
+<p>In a typical environment, swap is controlled by <code>/etc/fstab</code>, so you can disable it by editing this file.
+However, on Rocky Linux running on a Raspberry Pi, swap is configured as a disk partition and is not managed via <code>/etc/fstab</code>.</p>
+<p>To disable swap in this environment, you can mask <code>swap.target</code> using the following command:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line"><span class="token comment"># Not allow systemd to use swap after reboot</span>
+</span><span class="code-line">$ <span class="token function">sudo</span> systemctl mask swap.target
+</span></code></pre>
+<p>Reboot the system and verify that swap is disabled:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> <span class="token function">reboot</span>
+</span><span class="code-line">$ <span class="token function">swapon</span> <span class="token parameter variable">--show</span>
+</span><span class="code-line"><span class="token comment"># -> should be empty</span>
+</span></code></pre>
+<h2 id="set-selinux-to-permissive">Set SELinux to permissive</h2>
+<p>Setting SELinux to permissive mode is required to allow containers to access the host filesystem; for example, some cluster network plugins require this.
+You have to do this until SELinux support is improved in the kubelet.
+Or you can leave SELinux enabled if you know how to configure it but it may require settings that are not supported by kubeadm.</p>
+<p>Set SELinux to permissive mode by running the following command:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line"><span class="token comment"># Set SELinux to permissive after reboot</span>
+</span><span class="code-line">$ <span class="token function">sudo</span> <span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">'s/^SELINUX=enforcing$/SELINUX=permissive/'</span> /etc/selinux/config
+</span></code></pre>
+<p>Reboot the system and verify that SELinux is in permissive mode:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> <span class="token function">reboot</span>
+</span><span class="code-line">$ getenforce
+</span><span class="code-line"><span class="token comment"># -> Permissive</span>
+</span></code></pre>
+<h2 id="enable-ipv4-packet-forwarding">Enable IPv4 Packet Forwarding</h2>
+<p>By default, the Linux kernel does not allow IPv4 packets to be routed between interfaces.
+Most Kubernetes cluster networking implementations will change this setting, but some might expect the administrator to do it manually.</p>
+<p>Set the sysctl parameter to allow IPv4 packets to be routed between interfaces:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">cat</span> <span class="token operator">&#x3C;&#x3C;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /etc/sysctl.d/k8s.conf</span>
+</span></span><span class="code-line"><span class="token string">net.ipv4.ip_forward = 1
+</span></span><span class="code-line"><span class="token string">EOF</span>
+</span></code></pre>
+<p>Apply sysctl params without reboot:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> <span class="token function">sysctl</span> <span class="token parameter variable">--system</span>
+</span></code></pre>
+<h2 id="enable-memory-cgroup-controller">Enable memory cgroup controller</h2>
+<p>On Rocky Linux 10 running on a Raspberry Pi, <code>cgroup_disable=memory</code> is set in the kernel command line parameters, and this causes an error during kubeadm initialization.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">cat</span> /proc/cmdline
+</span><span class="code-line"><span class="token assign-left variable">reboot</span><span class="token operator">=</span>w <span class="token assign-left variable">coherent_pool</span><span class="token operator">=</span>1M <span class="token assign-left variable">8250.nr_uarts</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">pci</span><span class="token operator">=</span>pcie_bus_safe <span class="token assign-left variable">cgroup_disable</span><span class="token operator">=</span>memory <span class="token assign-left variable">numa_policy</span><span class="token operator">=</span>interleave <span class="token assign-left variable">bcm2708_fb.fbwidth</span><span class="token operator">=</span><span class="token number">640</span> <span class="token assign-left variable">bcm2708_fb.fbheight</span><span class="token operator">=</span><span class="token number">480</span> <span class="token assign-left variable">bcm2708_fb.fbdepth</span><span class="token operator">=</span><span class="token number">16</span> <span class="token assign-left variable">bcm2708_fb.fbswap</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">smsc95xx.macaddr</span><span class="token operator">=</span>2C:CF:67:DC:D6:11 <span class="token assign-left variable">vc_mem.mem_base</span><span class="token operator">=</span>0x3fc00000 <span class="token assign-left variable">vc_mem.mem_size</span><span class="token operator">=</span>0x40000000  <span class="token assign-left variable">console</span><span class="token operator">=</span>ttyAMA0,115200 <span class="token assign-left variable">console</span><span class="token operator">=</span>tty1 <span class="token assign-left variable">root</span><span class="token operator">=</span>LABEL<span class="token operator">=</span>RPIROOT <span class="token assign-left variable">rootfstype</span><span class="token operator">=</span>ext4 rootwait
+</span></code></pre>
+<p>To enable the memory cgroup controller, add <code>cgroup_enable=memory cgroup_memory=1</code> at the end of <code>/boot/efi/cmdline.txt</code>.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line"><span class="token comment"># Add `cgroup_enable=memory cgroup_memory=1` at the end</span>
+</span><span class="code-line">$ <span class="token function">sudo</span> <span class="token function">vi</span> /boot/efi/cmdline.txt
+</span><span class="code-line"><span class="token assign-left variable">console</span><span class="token operator">=</span>ttyAMA0,115200 <span class="token assign-left variable">console</span><span class="token operator">=</span>tty1 <span class="token assign-left variable">root</span><span class="token operator">=</span>LABEL<span class="token operator">=</span>RPIROOT <span class="token assign-left variable">rootfstype</span><span class="token operator">=</span>ext4 rootwait <span class="token assign-left variable">cgroup_enable</span><span class="token operator">=</span>memory <span class="token assign-left variable">cgroup_memory</span><span class="token operator">=</span><span class="token number">1</span>
+</span></code></pre>
+<p>Confirm the kernel command line parameters are updated:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> <span class="token function">reboot</span>
+</span><span class="code-line">$ <span class="token function">cat</span> /proc/cmdline
+</span><span class="code-line"><span class="token assign-left variable">reboot</span><span class="token operator">=</span>w <span class="token assign-left variable">coherent_pool</span><span class="token operator">=</span>1M <span class="token assign-left variable">8250.nr_uarts</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">pci</span><span class="token operator">=</span>pcie_bus_safe <span class="token assign-left variable">cgroup_disable</span><span class="token operator">=</span>memory <span class="token assign-left variable">numa_policy</span><span class="token operator">=</span>interleave <span class="token assign-left variable">bcm2708_fb.fbwidth</span><span class="token operator">=</span><span class="token number">640</span> <span class="token assign-left variable">bcm2708_fb.fbheight</span><span class="token operator">=</span><span class="token number">480</span> <span class="token assign-left variable">bcm2708_fb.fbdepth</span><span class="token operator">=</span><span class="token number">16</span> <span class="token assign-left variable">bcm2708_fb.fbswap</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">smsc95xx.macaddr</span><span class="token operator">=</span>2C:CF:67:DC:D6:11 <span class="token assign-left variable">vc_mem.mem_base</span><span class="token operator">=</span>0x3fc00000 <span class="token assign-left variable">vc_mem.mem_size</span><span class="token operator">=</span>0x40000000  <span class="token assign-left variable">console</span><span class="token operator">=</span>ttyAMA0,115200 <span class="token assign-left variable">console</span><span class="token operator">=</span>tty1 <span class="token assign-left variable">root</span><span class="token operator">=</span>LABEL<span class="token operator">=</span>RPIROOT <span class="token assign-left variable">rootfstype</span><span class="token operator">=</span>ext4 rootwait <span class="token assign-left variable">cgroup_enable</span><span class="token operator">=</span>memory <span class="token assign-left variable">cgroup_memory</span><span class="token operator">=</span><span class="token number">1</span>
+</span></code></pre>
+<h2 id="load-kernel-module-for-flannel">Load kernel module for Flannel</h2>
+<p>The <code>br_netfilter</code> kernel module is required by Flannel.
+Load this kernel module with the following command:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token builtin class-name">echo</span> br_netfilter <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /etc/modules-load.d/br_netfilter.conf
+</span></code></pre>
+<p>Reboot the system and verify that the <code>br_netfilter</code> module is loaded:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> <span class="token function">reboot</span>
+</span><span class="code-line">$ <span class="token function">sudo</span> lsmod <span class="token operator">|</span> <span class="token function">grep</span> br_netfilter
+</span></code></pre>
+<h2 id="set-sysctl-params-for-flannel">Set sysctl params for Flannel</h2>
+<p>Set the sysctl parameters required by Flannel with the following commands:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">cat</span> <span class="token operator">&#x3C;&#x3C;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /etc/sysctl.d/k8s.conf</span>
+</span></span><span class="code-line"><span class="token string">net.ipv4.ip_forward = 1
+</span></span><span class="code-line"><span class="token string">net.bridge.bridge-nf-call-iptables = 1
+</span></span><span class="code-line"><span class="token string">net.bridge.bridge-nf-call-ip6tables = 1
+</span></span><span class="code-line"><span class="token string">EOF</span>
+</span></code></pre>
+<p>Apply sysctl params without reboot:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> <span class="token function">sysctl</span> <span class="token parameter variable">--system</span>
+</span></code></pre>
+<h2 id="allow-port-10250-from-the-control-plane">Allow Port 10250 from the Control Plane</h2>
+<p>Port 10250 on the worker node is used by the control plane node to access the kubelet API.
+Allow access to this port using the following commands:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> firewall-cmd <span class="token parameter variable">--permanent</span> --add-port<span class="token operator">=</span><span class="token number">10250</span>/tcp
+</span><span class="code-line">$ <span class="token function">sudo</span> firewall-cmd <span class="token parameter variable">--reload</span>
+</span></code></pre>
+<h2 id="configure-firewall-for-pod-networking">Configure firewall for Pod networking</h2>
+<p>If you are using Flannel as the CNI plugin, additional firewall configuration is required on each node to allow Pod-to-Pod communication across nodes.</p>
+<p>By default, firewalld may block traffic from the Pod network, which can cause issues such as:</p>
+<ul>
+<li>DNS resolution failing</li>
+<li>Service names not being resolved</li>
+<li>Cross-node Pod communication failing</li>
+</ul>
+<p>Flannel uses VXLAN for encapsulation, which requires UDP port 8472.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> firewall-cmd <span class="token parameter variable">--permanent</span> --add-port<span class="token operator">=</span><span class="token number">8472</span>/udp
+</span></code></pre>
+<p>If your cluster was initialized with <code>--pod-network-cidr=10.244.0.0/16</code>, Pods will use that network.
+Add the Pod network to the trusted zone:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> firewall-cmd <span class="token parameter variable">--permanent</span> <span class="token parameter variable">--zone</span><span class="token operator">=</span>trusted --add-source<span class="token operator">=</span><span class="token number">10.244</span>.0.0/16
+</span></code></pre>
+<p>Apply the changes:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> firewall-cmd <span class="token parameter variable">--reload</span>
+</span></code></pre>
+<p>These are the required Linux settings.
+Let's move on to the Kubernetes components installation.</p>
+<h1 id="install-containerd">Install containerd</h1>
+<p>Add the <code>docker-ce</code> repository.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> dnf <span class="token function">install</span> <span class="token parameter variable">-y</span> yum-utils
+</span><span class="code-line">$ <span class="token function">sudo</span> dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+</span></code></pre>
+<p>Install <code>containerd</code> from the <code>docker-ce</code> repository.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> dnf <span class="token function">install</span> <span class="token parameter variable">-y</span> containerd.io
+</span></code></pre>
+<p>Generate the default <code>containerd</code> configuration.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> containerd config default <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /etc/containerd/config.toml
+</span></code></pre>
+<p>Enable and start <code>containerd</code>.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> systemctl <span class="token builtin class-name">enable</span> <span class="token parameter variable">--now</span> containerd
+</span><span class="code-line">$ systemctl status containerd
+</span><span class="code-line">● containerd.service - containerd container runtime
+</span><span class="code-line">     Loaded: loaded <span class="token punctuation">(</span>/usr/lib/systemd/system/containerd.service<span class="token punctuation">;</span> enabled<span class="token punctuation">;</span> preset: disabled<span class="token punctuation">)</span>
+</span><span class="code-line">     Active: active <span class="token punctuation">(</span>running<span class="token punctuation">)</span> since Sun <span class="token number">2026</span>-03-29 <span class="token number">21</span>:41:31 PDT<span class="token punctuation">;</span> 4s ago
+</span><span class="code-line"> Invocation: 02576ac4836b41a6a86140e6e2ce1ccf
+</span><span class="code-line">       Docs: https://containerd.io
+</span><span class="code-line">    Process: <span class="token number">1578</span> <span class="token assign-left variable">ExecStartPre</span><span class="token operator">=</span>/sbin/modprobe overlay <span class="token punctuation">(</span>code<span class="token operator">=</span>exited, <span class="token assign-left variable">status</span><span class="token operator">=</span><span class="token number">0</span>/SUCCESS<span class="token punctuation">)</span>
+</span><span class="code-line">   Main PID: <span class="token number">1579</span> <span class="token punctuation">(</span>containerd<span class="token punctuation">)</span>
+</span><span class="code-line">      Tasks: <span class="token number">10</span>
+</span><span class="code-line">     Memory: <span class="token number">15</span>.1M <span class="token punctuation">(</span>peak: <span class="token number">19</span>.4M<span class="token punctuation">)</span>
+</span><span class="code-line">        CPU: 524ms
+</span><span class="code-line">     CGroup: /system.slice/containerd.service
+</span><span class="code-line">             └─1579 /usr/bin/containerd
+</span><span class="code-line">
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.478603203-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span><span class="token string">"Start cni network conf syncer for default"</span>
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.478720740-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span><span class="token string">"Start streaming server"</span>
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.478823906-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span><span class="token string">"Registered namespace <span class="token entity" title="\&#x22;">\"</span>k8s.io<span class="token entity" title="\&#x22;">\"</span> with NRI"</span>
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.478886276-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span><span class="token string">"runtime interface starting up..."</span>
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.478936554-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span><span class="token string">"starting plugins..."</span>
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.479058831-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span><span class="token string">"Synchronizing NRI (plugin) with current runtime state"</span>
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.480580492-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span>serving<span class="token punctuation">..</span>. <span class="token assign-left variable">address</span><span class="token operator">=</span>/run/containerd/containerd.sock.ttrpc
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.481042583-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span>serving<span class="token punctuation">..</span>. <span class="token assign-left variable">address</span><span class="token operator">=</span>/run/containerd/containerd.sock
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local containerd<span class="token punctuation">[</span><span class="token number">1579</span><span class="token punctuation">]</span>: <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token string">"2026-03-29T21:41:31.484628051-07:00"</span> <span class="token assign-left variable">level</span><span class="token operator">=</span>info <span class="token assign-left variable">msg</span><span class="token operator">=</span><span class="token string">"containerd successfully booted in 0.224319s"</span>
+</span><span class="code-line">Mar <span class="token number">29</span> <span class="token number">21</span>:41:31 worker01.local systemd<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span>: Started containerd.service - containerd container runtime.
+</span></code></pre>
+<h1 id="install-kubernetes-components-kubeadm-kubelet-and-kubectl">Install Kubernetes components (kubeadm, kubelet, and kubectl)</h1>
+<p>Add Kubernetes repository.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">cat</span> <span class="token operator">&#x3C;&#x3C;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /etc/yum.repos.d/kubernetes.repo</span>
+</span></span><span class="code-line"><span class="token string">[kubernetes]
+</span></span><span class="code-line"><span class="token string">name=Kubernetes
+</span></span><span class="code-line"><span class="token string">baseurl=https://pkgs.k8s.io/core:/stable:/v1.35/rpm/
+</span></span><span class="code-line"><span class="token string">enabled=1
+</span></span><span class="code-line"><span class="token string">gpgcheck=1
+</span></span><span class="code-line"><span class="token string">gpgkey=https://pkgs.k8s.io/core:/stable:/v1.35/rpm/repodata/repomd.xml.key
+</span></span><span class="code-line"><span class="token string">exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+</span></span><span class="code-line"><span class="token string">EOF</span>
+</span></code></pre>
+<p>The <code>exclude</code> parameter in the repository definition ensures that Kubernetes-related packages are not upgraded automatically when running <code>dnf update</code>, because Kubernetes upgrades should follow a specific procedure.</p>
+<p>Install kubelet, kubeadm, and kubectl.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> dnf <span class="token function">install</span> <span class="token parameter variable">-y</span> <span class="token punctuation">\</span>
+</span><span class="code-line">kubelet <span class="token punctuation">\</span>
+</span><span class="code-line">kubeadm <span class="token punctuation">\</span>
+</span><span class="code-line">kubectl <span class="token punctuation">\</span>
+</span><span class="code-line"><span class="token parameter variable">--disableexcludes</span><span class="token operator">=</span>kubernetes
+</span></code></pre>
+<p>Start and enable kubelet before running kubeadm.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> systemctl <span class="token builtin class-name">enable</span> <span class="token parameter variable">--now</span> kubelet
+</span></code></pre>
+<h1 id="add-the-linux-worker-node-to-the-kubernetes-cluster">Add the Linux Worker Node to the Kubernetes Cluster</h1>
+<p>Run the following command on the control plane node to retrieve the kubeadm join command:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ kubeadm token create --print-join-command
+</span><span class="code-line"><span class="token comment"># -> This will output something like:</span>
+</span><span class="code-line"><span class="token comment">#    kubeadm join 192.168.1.2:6443 --token &#x3C;token> --discovery-token-ca-cert-hash sha256:&#x3C;hash></span>
+</span></code></pre>
+<p>Run this command on the worker node (with <code>sudo</code>):</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ <span class="token function">sudo</span> kubeadm <span class="token function">join</span> <span class="token number">192.168</span>.1.2:6443 <span class="token parameter variable">--token</span> <span class="token operator">&#x3C;</span>token<span class="token operator">></span> --discovery-token-ca-cert-hash sha256:<span class="token operator">&#x3C;</span>hash<span class="token operator">></span>
+</span></code></pre>
+<p>A few seconds later, you should see the worker node in the output of <code>kubectl get nodes</code>.
+Run <code>kubectl</code> on the control plane node.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ kubectl get nodes
+</span><span class="code-line">NAME              STATUS   ROLES           AGE   VERSION
+</span><span class="code-line">control01.local   Ready    control-plane   57d   v1.35.0
+</span><span class="code-line">worker01.local    Ready    <span class="token operator">&#x3C;</span>none<span class="token operator">></span>          55s   v1.35.3
+</span></code></pre>
+<h1 id="launch-the-first-pod">Launch the First Pod</h1>
+<p>Now you can launch the first pod on the worker node.
+Run the following command on the control plane node:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ kubectl run test-pod <span class="token parameter variable">--image</span><span class="token operator">=</span>busybox <span class="token parameter variable">--restart</span><span class="token operator">=</span>Never -- <span class="token function">sleep</span> <span class="token number">3600</span>
+</span></code></pre>
+<p>You can then verify that the first pod is running on the worker node with the following command:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ kubectl get pods <span class="token parameter variable">-o</span> wide
+</span><span class="code-line">NAME       READY   STATUS    RESTARTS   AGE   IP           NODE             NOMINATED NODE   READINESS GATES
+</span><span class="code-line">test-pod   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          15s   <span class="token number">10.244</span>.1.2   worker01.local   <span class="token operator">&#x3C;</span>none<span class="token operator">></span>           <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span></code></pre>
+<p>You can check the pod logs; however, since it only executes the <code>sleep 3600</code> command, the log is empty.</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ kubectl logs test-pod
+</span><span class="code-line"><span class="token comment"># -> Should be empty.</span>
+</span></code></pre>
+<p>You can get the details of the pod with the following command:</p>
+<pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line">$ kubectl describe pod test-pod
+</span><span class="code-line">Name:             test-pod
+</span><span class="code-line">Namespace:        default
+</span><span class="code-line">Priority:         <span class="token number">0</span>
+</span><span class="code-line">Service Account:  default
+</span><span class="code-line">Node:             worker01.local/192.168.1.3
+</span><span class="code-line">Start Time:       Sun, <span class="token number">29</span> Mar <span class="token number">2026</span> <span class="token number">22</span>:48:28 <span class="token parameter variable">-0700</span>
+</span><span class="code-line">Labels:           <span class="token assign-left variable">run</span><span class="token operator">=</span>test-pod
+</span><span class="code-line">Annotations:      <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">Status:           Running
+</span><span class="code-line">IP:               <span class="token number">10.244</span>.1.2
+</span><span class="code-line">IPs:
+</span><span class="code-line">  IP:  <span class="token number">10.244</span>.1.2
+</span><span class="code-line">Containers:
+</span><span class="code-line">  test-pod:
+</span><span class="code-line">    Container ID:  containerd://227fcb91cb9569e8cad9ef4ab77d8c56d1e93fa87a1462638d9dfc312624df24
+</span><span class="code-line">    Image:         busybox
+</span><span class="code-line">    Image ID:      docker.io/library/busybox@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+</span><span class="code-line">    Port:          <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    Host Port:     <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    Args:
+</span><span class="code-line">      <span class="token function">sleep</span>
+</span><span class="code-line">      <span class="token number">3600</span>
+</span><span class="code-line">    State:          Running
+</span><span class="code-line">      Started:      Sun, <span class="token number">29</span> Mar <span class="token number">2026</span> <span class="token number">22</span>:48:33 <span class="token parameter variable">-0700</span>
+</span><span class="code-line">    Ready:          True
+</span><span class="code-line">    Restart Count:  <span class="token number">0</span>
+</span><span class="code-line">    Environment:    <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    Mounts:
+</span><span class="code-line">      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-lf7js <span class="token punctuation">(</span>ro<span class="token punctuation">)</span>
+</span><span class="code-line">Conditions:
+</span><span class="code-line">  Type                        Status
+</span><span class="code-line">  PodReadyToStartContainers   True 
+</span><span class="code-line">  Initialized                 True 
+</span><span class="code-line">  Ready                       True 
+</span><span class="code-line">  ContainersReady             True 
+</span><span class="code-line">  PodScheduled                True 
+</span><span class="code-line">Volumes:
+</span><span class="code-line">  kube-api-access-lf7js:
+</span><span class="code-line">    Type:                    Projected <span class="token punctuation">(</span>a volume that contains injected data from multiple sources<span class="token punctuation">)</span>
+</span><span class="code-line">    TokenExpirationSeconds:  <span class="token number">3607</span>
+</span><span class="code-line">    ConfigMapName:           kube-root-ca.crt
+</span><span class="code-line">    Optional:                <span class="token boolean">false</span>
+</span><span class="code-line">    DownwardAPI:             <span class="token boolean">true</span>
+</span><span class="code-line">QoS Class:                   BestEffort
+</span><span class="code-line">Node-Selectors:              <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">Tolerations:                 node.kubernetes.io/not-ready:NoExecute <span class="token assign-left variable">op</span><span class="token operator">=</span>Exists <span class="token keyword">for</span> 300s
+</span><span class="code-line">                             node.kubernetes.io/unreachable:NoExecute <span class="token assign-left variable">op</span><span class="token operator">=</span>Exists <span class="token keyword">for</span> 300s
+</span><span class="code-line">Events:
+</span><span class="code-line">  Type    Reason     Age   From               Message
+</span><span class="code-line">  ----    ------     ----  ----               -------
+</span><span class="code-line">  Normal  Scheduled  105s  default-scheduler  Successfully assigned default/test-pod to worker01.local
+</span><span class="code-line">  Normal  Pulling    104s  kubelet            spec.containers<span class="token punctuation">{</span>test-pod<span class="token punctuation">}</span>: Pulling image <span class="token string">"busybox"</span>
+</span><span class="code-line">  Normal  Pulled     100s  kubelet            spec.containers<span class="token punctuation">{</span>test-pod<span class="token punctuation">}</span>: Successfully pulled image <span class="token string">"busybox"</span> <span class="token keyword">in</span> <span class="token number">3</span>.499s <span class="token punctuation">(</span><span class="token number">3</span>.499s including waiting<span class="token punctuation">)</span>. Image size: <span class="token number">1911327</span> bytes.
+</span><span class="code-line">  Normal  Created    100s  kubelet            spec.containers<span class="token punctuation">{</span>test-pod<span class="token punctuation">}</span>: Container created
+</span><span class="code-line">  Normal  Started    100s  kubelet            spec.containers<span class="token punctuation">{</span>test-pod<span class="token punctuation">}</span>: Container started
+</span></code></pre>
+<h1 id="references">References</h1>
+<ul>
+<li><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/">Creating a cluster with kubeadm</a></li>
+<li><a href="https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/adding-linux-nodes/">Adding Linux worker nodes</a></li>
+</ul>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
