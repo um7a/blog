@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kubernetes - Using local-path-provisioner for PersistentVolumes</title>
+  
+  <meta name="description" content="I’m continuing my Kubernetes learning journey, and recently I wanted to experiment with StatefulSets. Since StatefulSets typically require persistent storage, I needed a simple way to provision PersistentVolumes in my Kubernetes cluster. In this article, I’ll walk through installing and testing rancher/local-path-provisioner.
+">
+  
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #ffffff;
+      --text: #242424;
+      --muted: #6b6b6b;
+      --border: #f2f2f2;
+      --active-border: #242424;
+      --accent: #242424;
+      --code-background: #f7f7f7;
+      --code-token-comment: #6a737d;
+      --code-token-punctuation: #24292e;
+      --code-token-property: #005cc5;
+      --code-token-string: #032f62;
+      --code-token-keyword: #d73a49;
+      --code-token-function: #6f42c1;
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 52px 24px 72px;
+    }
+
+    .article {
+      max-width: 760px;
+    }
+
+    .article-header {
+      width: min(100vw - 48px, 880px);
+      margin-bottom: 40px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 64px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .back-home:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .back-home-icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .back-home-text {
+      margin-left: -2px;
+    }
+
+    .article-title {
+      margin: 0;
+      font-size: clamp(2rem, 4.2vw, 3rem);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    .article-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .article-author {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: var(--text);
+    }
+
+    .article-author-icon {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .article-author-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .article-meta-separator {
+      color: var(--muted);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px 9px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .tag-icon {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+    }
+
+    .table-of-contents-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .table-of-contents-list li {
+      display: grid;
+      grid-template-columns: max-content auto;
+      column-gap: 0.6em;
+    }
+
+    .table-of-contents-list a {
+      color: inherit;
+      justify-self: start;
+      text-decoration: none;
+    }
+
+    .table-of-contents-list a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .table-of-contents-list .toc-depth-2 {
+      padding-left: 1.5rem;
+    }
+
+    .table-of-contents-list .toc-depth-3 {
+      padding-left: 3rem;
+    }
+
+    .content h2,
+    .content h3,
+    .content h4 {
+      margin-top: 2em;
+      line-height: 1.25;
+    }
+
+    .content a {
+      color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    .content img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .content pre {
+      overflow-x: auto;
+      padding: 16px;
+      border-radius: 6px;
+      background: var(--code-background);
+    }
+
+    .content code {
+      border-radius: 4px;
+      background: var(--code-background);
+      padding: 0.1em 0.3em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    .content pre code {
+      padding: 0;
+      background: transparent;
+    }
+
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      color: var(--code-token-comment);
+    }
+
+    .token.punctuation {
+      color: var(--code-token-punctuation);
+    }
+
+    .token.property,
+    .token.tag,
+    .token.boolean,
+    .token.number,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: var(--code-token-property);
+    }
+
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: var(--code-token-string);
+    }
+
+    .token.operator,
+    .token.entity,
+    .token.url,
+    .language-css .token.string,
+    .style .token.string {
+      color: var(--code-token-keyword);
+    }
+
+    .token.atrule,
+    .token.attr-value,
+    .token.keyword {
+      color: var(--code-token-keyword);
+    }
+
+    .token.function,
+    .token.class-name {
+      color: var(--code-token-function);
+    }
+
+    .content blockquote {
+      margin-left: 0;
+      padding-left: 18px;
+      border-left: 2px solid var(--active-border);
+      color: var(--muted);
+    }
+
+    .content table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow-wrap: anywhere;
+    }
+
+    .content th,
+    .content td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .content th {
+      background: var(--code-background);
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 32px 18px 52px;
+      }
+
+      .article {
+        max-width: none;
+      }
+
+      .back-home {
+        margin-bottom: 48px;
+      }
+
+      .article-title {
+        font-size: 1.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <a class="back-home" href="../index.html">
+      <img class="back-home-icon" src="../images/chevron-left.svg" alt="" width="24" height="24" aria-hidden="true">
+      <span class="back-home-text">Back to Home</span>
+    </a>
+
+    <article class="article">
+      <header class="article-header">
+        <h1 class="article-title">Kubernetes - Using local-path-provisioner for PersistentVolumes</h1>
+        <div class="article-meta">
+          
+          <span class="article-author">
+            <img class="article-author-icon" src="../images/um7a.png" alt="" width="32" height="32">
+            <span class="article-author-name">um7a</span>
+          </span>
+          
+          
+          
+          <span class="article-meta-separator">·</span>
+          
+          <span>4 min read</span>
+          
+          
+          
+          <span class="article-meta-separator">·</span>
+          
+          
+          <time datetime="Sun Jun 21 2026 01:00:00 GMT-0700 (Pacific Daylight Time)">Jun 21, 2026</time>
+          
+        </div>
+        
+        <ul class="tags" aria-label="Tags">
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>Kubernetes</span>
+          </li>
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>Raspberry Pi</span>
+          </li>
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>local-path-provisioner</span>
+          </li>
+          
+        </ul>
+        
+      </header>
+      
+      <nav aria-label="Table of contents">
+        <h2>Table of contents</h2>
+        <ul class="table-of-contents-list">
+          <li class="toc-depth-1">
+            <span>1.</span> <a href="#overview">Overview</a>
+          </li><li class="toc-depth-1">
+            <span>2.</span> <a href="#what-is-rancherlocal-path-provisioner">What is rancher/local-path-provisioner?</a>
+          </li><li class="toc-depth-1">
+            <span>3.</span> <a href="#install-local-path-provisioner">Install local-path-provisioner</a>
+          </li><li class="toc-depth-1">
+            <span>4.</span> <a href="#create-a-test-pvc">Create a test PVC</a>
+          </li><li class="toc-depth-1">
+            <span>5.</span> <a href="#use-the-pvc-from-a-pod">Use the PVC from a Pod</a>
+          </li><li class="toc-depth-1">
+            <span>6.</span> <a href="#limitations-of-local-path-provisioner">Limitations of local-path-provisioner</a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="content">
+        <h1 id="overview">Overview</h1>
+<p>I’m continuing my Kubernetes learning journey, and recently I wanted to experiment with StatefulSets. Since StatefulSets typically require persistent storage, I needed a simple way to provision PersistentVolumes (PVs) in my Kubernetes cluster. In this article, I’ll walk through installing and testing rancher/local-path-provisioner.</p>
+<h1 id="what-is-rancherlocal-path-provisioner">What is rancher/local-path-provisioner?</h1>
+<p>local-path-provisioner is a lightweight dynamic provisioner that provisions PVs from local directories on Kubernetes nodes.</p>
+<h1 id="install-local-path-provisioner">Install local-path-provisioner</h1>
+<p>Apply the official manifest:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+</span></code></pre>
+<p>The output should look similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">namespace/local-path-storage created
+</span><span class="code-line">serviceaccount/local-path-provisioner-service-account created
+</span><span class="code-line">role.rbac.authorization.k8s.io/local-path-provisioner-role created
+</span><span class="code-line">clusterrole.rbac.authorization.k8s.io/local-path-provisioner-role created
+</span><span class="code-line">rolebinding.rbac.authorization.k8s.io/local-path-provisioner-bind created
+</span><span class="code-line">clusterrolebinding.rbac.authorization.k8s.io/local-path-provisioner-bind created
+</span><span class="code-line">deployment.apps/local-path-provisioner created
+</span><span class="code-line">storageclass.storage.k8s.io/local-path created
+</span><span class="code-line">configmap/local-path-config created
+</span></code></pre>
+<p>The manifest creates the following resources:</p>
+<ul>
+<li>Namespace: <code>local-path-storage</code></li>
+<li>Deployment: <code>local-path-provisioner</code></li>
+<li>StorageClass: <code>local-path</code></li>
+</ul>
+<p>The Deployment is the main component of the local-path-provisioner system.
+It watches for new PersistentVolumeClaims (PVCs) and automatically provisions PVs for them. When a Pod that uses a PVC is scheduled to a node, the provisioner creates a corresponding PV and a directory on that node. By default, the directory is created under <code>/opt/local-path-provisioner/pvc-&#x3C;uuid>/</code>. When the PVC is deleted, the associated directory may also be removed, depending on the reclaim policy.</p>
+<p>Verify the Deployment:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get deployments <span class="token parameter variable">-n</span> local-path-storage
+</span></code></pre>
+<p>The output should look similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+</span><span class="code-line">local-path-provisioner   1/1     1            1           4d5h
+</span></code></pre>
+<p>Check the StorageClass:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get storageclass
+</span></code></pre>
+<p>The output should look similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME         PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+</span><span class="code-line">local-path   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  4d5h
+</span></code></pre>
+<h1 id="create-a-test-pvc">Create a test PVC</h1>
+<p>Create a manifest with the following content:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> PersistentVolumeClaim
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>pvc
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">accessModes</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token punctuation">-</span> ReadWriteOnce
+</span><span class="code-line">  <span class="token key atrule">storageClassName</span><span class="token punctuation">:</span> local<span class="token punctuation">-</span>path
+</span><span class="code-line">  <span class="token key atrule">resources</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">requests</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">storage</span><span class="token punctuation">:</span> 1Gi
+</span></code></pre>
+<p>Apply it:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> test-pvc.yaml
+</span></code></pre>
+<p>Verify the PVC:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pvc
+</span></code></pre>
+<p>You can see output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME       STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+</span><span class="code-line">test-pvc   Pending                                      local-path     &#x3C;unset>                 3m54s
+</span></code></pre>
+<p>At this point, the PVC is in the <code>Pending</code> state because the local-path StorageClass uses the <code>WaitForFirstConsumer</code> volume binding mode. Since local-path storage is tied to a specific node, Kubernetes delays volume binding until a Pod that uses the PVC is scheduled.</p>
+<h1 id="use-the-pvc-from-a-pod">Use the PVC from a Pod</h1>
+<p>Let's test the PVC by creating a Pod that mounts it.</p>
+<p>Create a manifest for a Pod that uses the test PVC:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> storage<span class="token punctuation">-</span>test<span class="token punctuation">-</span>pod
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> busybox
+</span><span class="code-line">    <span class="token key atrule">image</span><span class="token punctuation">:</span> busybox
+</span><span class="code-line">    <span class="token key atrule">command</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> sleep
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token string">"3600"</span>
+</span><span class="code-line">    <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> data
+</span><span class="code-line">      <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /data
+</span><span class="code-line">
+</span><span class="code-line">  <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> data
+</span><span class="code-line">    <span class="token key atrule">persistentVolumeClaim</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">claimName</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>pvc
+</span></code></pre>
+<p>Apply:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> storage-test-pod.yaml
+</span></code></pre>
+<p>Verify the PVC is in the <code>Bound</code> state:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pvc
+</span></code></pre>
+<p>Output should look similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+</span><span class="code-line">test-pvc   Bound    pvc-50612313-fafd-4dc6-8256-65388fcab05b   1Gi        RWO            local-path     &#x3C;unset>                 11m
+</span></code></pre>
+<p>Next, verify that Kubernetes has created a PV:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get <span class="token function">pv</span>
+</span></code></pre>
+<p>Output should look similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM              STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+</span><span class="code-line">pvc-50612313-fafd-4dc6-8256-65388fcab05b   1Gi        RWO            Delete           Bound    default/test-pvc   local-path     &#x3C;unset>                          3m3s
+</span></code></pre>
+<p>Create a file in the volume:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> storage-test-pod -- <span class="token function">sh</span>
+</span><span class="code-line"><span class="token builtin class-name">echo</span> hello <span class="token operator">></span> /data/test.txt
+</span></code></pre>
+<p>Delete the Pod and then recreate it:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete pod storage-test-pod
+</span><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> storage-test-pod.yaml
+</span></code></pre>
+<p>The file should still exist because it is stored on the PV rather than inside the Pod:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> storage-test-pod -- <span class="token function">sh</span>
+</span><span class="code-line"><span class="token function">cat</span> /data/test.txt
+</span></code></pre>
+<p>The output should look similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">hello
+</span></code></pre>
+<h1 id="limitations-of-local-path-provisioner">Limitations of local-path-provisioner</h1>
+<p>local-path-provisioner stores data on the node where a Pod is running.
+If that node becomes unavailable, the Pod can no longer access its storage because the data resides on that node's local disk.</p>
+<p>For this reason, local-path-provisioner is an excellent choice for:</p>
+<ul>
+<li>Learning Kubernetes</li>
+<li>Home labs</li>
+<li>Single-node clusters</li>
+</ul>
+<p>However, it is not ideal for highly available storage solutions.</p>
+<p>Common next steps for implementing highly available storage include:</p>
+<ul>
+<li>NFS</li>
+<li>Longhorn</li>
+<li>Rook + Ceph</li>
+</ul>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
