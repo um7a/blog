@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kubernetes - Workload Resources</title>
+  
+  <meta name="description" content="Kubernetes workloads are resources used to run and manage applications within a Kubernetes cluster.
+This article introduces these resources, including Pods, ReplicaSets, Deployments, DaemonSets, StatefulSets, Jobs, and CronJobs.
+">
+  
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #ffffff;
+      --text: #242424;
+      --muted: #6b6b6b;
+      --border: #f2f2f2;
+      --active-border: #242424;
+      --accent: #242424;
+      --code-background: #f7f7f7;
+      --code-token-comment: #6a737d;
+      --code-token-punctuation: #24292e;
+      --code-token-property: #005cc5;
+      --code-token-string: #032f62;
+      --code-token-keyword: #d73a49;
+      --code-token-function: #6f42c1;
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 52px 24px 72px;
+    }
+
+    .article {
+      max-width: 760px;
+    }
+
+    .article-header {
+      width: min(100vw - 48px, 880px);
+      margin-bottom: 40px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 64px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .back-home:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .back-home-icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .back-home-text {
+      margin-left: -2px;
+    }
+
+    .article-title {
+      margin: 0;
+      font-size: clamp(2rem, 4.2vw, 3rem);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    .article-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .article-author {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: var(--text);
+    }
+
+    .article-author-icon {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .article-author-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .article-meta-separator {
+      color: var(--muted);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px 9px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .tag-icon {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+    }
+
+    .table-of-contents-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .table-of-contents-list li {
+      display: grid;
+      grid-template-columns: max-content auto;
+      column-gap: 0.6em;
+    }
+
+    .table-of-contents-list a {
+      color: inherit;
+      justify-self: start;
+      text-decoration: none;
+    }
+
+    .table-of-contents-list a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .table-of-contents-list .toc-depth-2 {
+      padding-left: 1.5rem;
+    }
+
+    .table-of-contents-list .toc-depth-3 {
+      padding-left: 3rem;
+    }
+
+    .content h2,
+    .content h3,
+    .content h4 {
+      margin-top: 2em;
+      line-height: 1.25;
+    }
+
+    .content a {
+      color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    .content img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .content pre {
+      overflow-x: auto;
+      padding: 16px;
+      border-radius: 6px;
+      background: var(--code-background);
+    }
+
+    .content code {
+      border-radius: 4px;
+      background: var(--code-background);
+      padding: 0.1em 0.3em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    .content pre code {
+      padding: 0;
+      background: transparent;
+    }
+
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      color: var(--code-token-comment);
+    }
+
+    .token.punctuation {
+      color: var(--code-token-punctuation);
+    }
+
+    .token.property,
+    .token.tag,
+    .token.boolean,
+    .token.number,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: var(--code-token-property);
+    }
+
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: var(--code-token-string);
+    }
+
+    .token.operator,
+    .token.entity,
+    .token.url,
+    .language-css .token.string,
+    .style .token.string {
+      color: var(--code-token-keyword);
+    }
+
+    .token.atrule,
+    .token.attr-value,
+    .token.keyword {
+      color: var(--code-token-keyword);
+    }
+
+    .token.function,
+    .token.class-name {
+      color: var(--code-token-function);
+    }
+
+    .content blockquote {
+      margin-left: 0;
+      padding-left: 18px;
+      border-left: 2px solid var(--active-border);
+      color: var(--muted);
+    }
+
+    .content table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow-wrap: anywhere;
+    }
+
+    .content th,
+    .content td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .content th {
+      background: var(--code-background);
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 32px 18px 52px;
+      }
+
+      .article {
+        max-width: none;
+      }
+
+      .back-home {
+        margin-bottom: 48px;
+      }
+
+      .article-title {
+        font-size: 1.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <a class="back-home" href="../index.html">
+      <img class="back-home-icon" src="../images/chevron-left.svg" alt="" width="24" height="24" aria-hidden="true">
+      <span class="back-home-text">Back to Home</span>
+    </a>
+
+    <article class="article">
+      <header class="article-header">
+        <h1 class="article-title">Kubernetes - Workload Resources</h1>
+        <div class="article-meta">
+          
+          <span class="article-author">
+            <img class="article-author-icon" src="../images/um7a.png" alt="" width="32" height="32">
+            <span class="article-author-name">um7a</span>
+          </span>
+          
+          
+          
+          <span class="article-meta-separator">·</span>
+          
+          <span>17 min read</span>
+          
+          
+          
+          <span class="article-meta-separator">·</span>
+          
+          
+          <time datetime="Sat Jun 27 2026 01:00:00 GMT-0700 (Pacific Daylight Time)">Jun 27, 2026</time>
+          
+        </div>
+        
+        <ul class="tags" aria-label="Tags">
+          
+          <li class="tag">
+            <img class="tag-icon" src="../images/tag-02.svg" alt="" width="14" height="14">
+            <span>Kubernetes</span>
+          </li>
+          
+        </ul>
+        
+      </header>
+      
+      <nav aria-label="Table of contents">
+        <h2>Table of contents</h2>
+        <ul class="table-of-contents-list">
+          <li class="toc-depth-1">
+            <span>1.</span> <a href="#overview">Overview</a>
+          </li><li class="toc-depth-1">
+            <span>2.</span> <a href="#pods">Pods</a>
+          </li><li class="toc-depth-2">
+            <span>2.1.</span> <a href="#create-a-pod">Create a Pod</a>
+          </li><li class="toc-depth-2">
+            <span>2.2.</span> <a href="#get-pod-information">Get Pod Information</a>
+          </li><li class="toc-depth-2">
+            <span>2.3.</span> <a href="#get-pod-logs">Get Pod Logs</a>
+          </li><li class="toc-depth-2">
+            <span>2.4.</span> <a href="#run-commands-in-container">Run Commands in Container</a>
+          </li><li class="toc-depth-2">
+            <span>2.5.</span> <a href="#specify-entrypoint-and-cmd-of-the-container">Specify ENTRYPOINT and CMD of the Container</a>
+          </li><li class="toc-depth-2">
+            <span>2.6.</span> <a href="#specify-working-directory-of-the-container">Specify Working Directory of the Container</a>
+          </li><li class="toc-depth-2">
+            <span>2.7.</span> <a href="#create-a-pod-using-host-network">Create a Pod using Host Network</a>
+          </li><li class="toc-depth-2">
+            <span>2.8.</span> <a href="#create-a-pod-with-multiple-containers">Create a Pod with Multiple Containers</a>
+          </li><li class="toc-depth-2">
+            <span>2.9.</span> <a href="#delete-a-pod">Delete a Pod</a>
+          </li><li class="toc-depth-1">
+            <span>3.</span> <a href="#replicasets">ReplicaSets</a>
+          </li><li class="toc-depth-2">
+            <span>3.1.</span> <a href="#create-a-replicaset">Create a ReplicaSet</a>
+          </li><li class="toc-depth-2">
+            <span>3.2.</span> <a href="#get-replicaset-information">Get ReplicaSet Information</a>
+          </li><li class="toc-depth-2">
+            <span>3.3.</span> <a href="#self-healing-of-replicasets">Self Healing of ReplicaSets</a>
+          </li><li class="toc-depth-2">
+            <span>3.4.</span> <a href="#delete-a-replicaset">Delete a ReplicaSet</a>
+          </li><li class="toc-depth-1">
+            <span>4.</span> <a href="#deployments">Deployments</a>
+          </li><li class="toc-depth-2">
+            <span>4.1.</span> <a href="#create-a-deployment">Create a Deployment</a>
+          </li><li class="toc-depth-2">
+            <span>4.2.</span> <a href="#get-deployment-information">Get Deployment Information</a>
+          </li><li class="toc-depth-2">
+            <span>4.3.</span> <a href="#performing-a-rolling-update-with-deployments">Performing a Rolling Update with Deployments</a>
+          </li><li class="toc-depth-2">
+            <span>4.4.</span> <a href="#delete-a-deployment">Delete a Deployment</a>
+          </li><li class="toc-depth-1">
+            <span>5.</span> <a href="#daemonsets">DaemonSets</a>
+          </li><li class="toc-depth-2">
+            <span>5.1.</span> <a href="#create-a-daemonset">Create a DaemonSet</a>
+          </li><li class="toc-depth-2">
+            <span>5.2.</span> <a href="#get-daemonset-information">Get DaemonSet Information</a>
+          </li><li class="toc-depth-2">
+            <span>5.3.</span> <a href="#delete-a-daemonset">Delete a DaemonSet</a>
+          </li><li class="toc-depth-1">
+            <span>6.</span> <a href="#statefulsets">StatefulSets</a>
+          </li><li class="toc-depth-2">
+            <span>6.1.</span> <a href="#create-a-statefulset">Create a StatefulSet</a>
+          </li><li class="toc-depth-2">
+            <span>6.2.</span> <a href="#get-statefulset-information">Get StatefulSet Information</a>
+          </li><li class="toc-depth-2">
+            <span>6.3.</span> <a href="#check-persistentvolumeclaims-used-by-statefulset-pods">Check PersistentVolumeClaims Used by StatefulSet Pods</a>
+          </li><li class="toc-depth-2">
+            <span>6.4.</span> <a href="#delete-a-statefulset">Delete a StatefulSet</a>
+          </li><li class="toc-depth-1">
+            <span>7.</span> <a href="#jobs">Jobs</a>
+          </li><li class="toc-depth-2">
+            <span>7.1.</span> <a href="#create-a-job">Create a Job</a>
+          </li><li class="toc-depth-2">
+            <span>7.2.</span> <a href="#get-job-information">Get Job Information</a>
+          </li><li class="toc-depth-2">
+            <span>7.3.</span> <a href="#check-pods-managed-by-job">Check Pods Managed by Job</a>
+          </li><li class="toc-depth-2">
+            <span>7.4.</span> <a href="#delete-a-job">Delete a Job</a>
+          </li><li class="toc-depth-1">
+            <span>8.</span> <a href="#cronjobs">CronJobs</a>
+          </li><li class="toc-depth-2">
+            <span>8.1.</span> <a href="#create-a-cronjob">Create a CronJob</a>
+          </li><li class="toc-depth-2">
+            <span>8.2.</span> <a href="#get-cronjob-information">Get CronJob Information</a>
+          </li><li class="toc-depth-2">
+            <span>8.3.</span> <a href="#suspend-a-cronjob">Suspend a CronJob</a>
+          </li><li class="toc-depth-2">
+            <span>8.4.</span> <a href="#manually-execute-a-cronjob">Manually Execute a CronJob</a>
+          </li><li class="toc-depth-2">
+            <span>8.5.</span> <a href="#delete-a-cronjob">Delete a CronJob</a>
+          </li><li class="toc-depth-1">
+            <span>9.</span> <a href="#next-steps">Next Steps</a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="content">
+        <h1 id="overview">Overview</h1>
+<p>Kubernetes workloads are resources used to run and manage applications within a Kubernetes cluster.
+This article introduces these resources, including Pods, ReplicaSets, Deployments, StatefulSets, DaemonSets, Jobs, and CronJobs.</p>
+<h1 id="pods">Pods</h1>
+<p>A Pod is the smallest unit of workload resources.</p>
+<p>A Pod consists of one or more containers.
+In general, it is recommended to create a Pod with one container.
+However, if you want to run containers that support your main container, you can add them to the same Pod.
+This pattern is called the sidecar pattern, ambassador pattern, or adapter pattern, depending on the role of the supporting containers.</p>
+<p>Containers in the same Pod share the same network namespace, so they can communicate with each other by using <code>localhost</code>.</p>
+<h2 id="create-a-pod">Create a Pod</h2>
+<p>To create a Pod, you need a manifest file.
+Create a file named <code>pod.yaml</code> with the following contents:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>pod
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container
+</span><span class="code-line">      <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span></code></pre>
+<p>Apply the manifest to a Kubernetes cluster:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> pod.yaml
+</span></code></pre>
+<p>The message <code>pod/sample-pod created</code> should be displayed.</p>
+<h2 id="get-pod-information">Get Pod Information</h2>
+<p>The status of the created Pod can be checked with the following command:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pods <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The output should be like this:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME         READY   STATUS    RESTARTS   AGE     IP             NODE             NOMINATED NODE   READINESS GATES
+</span><span class="code-line">sample-pod   1/1     Running   0          5m29s   10.244.2.248   worker02.local   &#x3C;none>           &#x3C;none>
+</span></code></pre>
+<p>For more detailed information, run the following command:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl describe pod sample-pod
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">Name:             sample-pod
+</span><span class="code-line">Namespace:        default
+</span><span class="code-line">Priority:         0
+</span><span class="code-line">Service Account:  default
+</span><span class="code-line">Node:             worker02.local/192.168.1.4
+</span><span class="code-line">Start Time:       Mon, 15 Jun 2026 13:39:20 -0700
+</span><span class="code-line">Labels:           &#x3C;none>
+</span><span class="code-line">Annotations:      &#x3C;none>
+</span><span class="code-line">Status:           Running
+</span><span class="code-line">IP:               10.244.2.248
+</span><span class="code-line">IPs:
+</span><span class="code-line">  IP:  10.244.2.248
+</span><span class="code-line">Containers:
+</span><span class="code-line">  nginx-container:
+</span><span class="code-line">    Container ID:   containerd://465937a66ae43f40908a6acef3691d86042a3c6d8511c6ba1c7fbd20e821fcec
+</span><span class="code-line">    Image:          nginx:1.30
+</span><span class="code-line">    Image ID:       docker.io/library/nginx@sha256:540858b3a92eed95cbcae475698c12f619b4a6afa122485f439e4d7227cbeb38
+</span><span class="code-line">    Port:           &#x3C;none>
+</span><span class="code-line">    Host Port:      &#x3C;none>
+</span><span class="code-line">    State:          Running
+</span><span class="code-line">      Started:      Mon, 15 Jun 2026 13:39:22 -0700
+</span><span class="code-line">    Ready:          True
+</span><span class="code-line">    Restart Count:  0
+</span><span class="code-line">    Environment:    &#x3C;none>
+</span><span class="code-line">    Mounts:
+</span><span class="code-line">      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-5jbxh (ro)
+</span><span class="code-line">Conditions:
+</span><span class="code-line">  Type                        Status
+</span><span class="code-line">  PodReadyToStartContainers   True 
+</span><span class="code-line">  Initialized                 True 
+</span><span class="code-line">  Ready                       True 
+</span><span class="code-line">  ContainersReady             True 
+</span><span class="code-line">  PodScheduled                True 
+</span><span class="code-line">Volumes:
+</span><span class="code-line">  kube-api-access-5jbxh:
+</span><span class="code-line">    Type:                    Projected (a volume that contains injected data from multiple sources)
+</span><span class="code-line">    TokenExpirationSeconds:  3607
+</span><span class="code-line">    ConfigMapName:           kube-root-ca.crt
+</span><span class="code-line">    Optional:                false
+</span><span class="code-line">    DownwardAPI:             true
+</span><span class="code-line">QoS Class:                   BestEffort
+</span><span class="code-line">Node-Selectors:              &#x3C;none>
+</span><span class="code-line">Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+</span><span class="code-line">                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+</span><span class="code-line">Events:
+</span><span class="code-line">  Type    Reason     Age   From               Message
+</span><span class="code-line">  ----    ------     ----  ----               -------
+</span><span class="code-line">  Normal  Scheduled  23m   default-scheduler  Successfully assigned default/sample-pod to worker02.local
+</span><span class="code-line">  Normal  Pulling    23m   kubelet            spec.containers{nginx-container}: Pulling image "nginx:1.30"
+</span><span class="code-line">  Normal  Pulled     23m   kubelet            spec.containers{nginx-container}: Successfully pulled image "nginx:1.30" in 804ms (805ms including waiting). Image size: 61419880 bytes.
+</span><span class="code-line">  Normal  Created    23m   kubelet            spec.containers{nginx-container}: Container created
+</span><span class="code-line">  Normal  Started    23m   kubelet            spec.containers{nginx-container}: Container started
+</span></code></pre>
+<h2 id="get-pod-logs">Get Pod Logs</h2>
+<p>The following command displays the log messages of a Pod. Kubernetes collects log messages written to the container’s stdout and stderr streams.</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl logs sample-pod <span class="token parameter variable">-f</span>
+</span></code></pre>
+<h2 id="run-commands-in-container">Run Commands in Container</h2>
+<p>Commands can be executed inside the container using <code>kubectl exec</code>:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl <span class="token builtin class-name">exec</span> sample-pod -- <span class="token function">ls</span> /var/log/nginx/access.log
+</span></code></pre>
+<p>Like the <code>docker exec</code> command, <code>kubectl exec</code> supports the <code>-i</code> option and <code>-t</code> options.<br>
+The <code>-i</code> option keeps stdin open and passes standard input to the process running inside the container. The <code>-t</code> option allocates a TTY, enabling interactive terminal sessions.</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> sample-pod -- /bin/bash
+</span></code></pre>
+<h2 id="specify-entrypoint-and-cmd-of-the-container">Specify ENTRYPOINT and CMD of the Container</h2>
+<p><code>command</code> is used to specify the container’s <code>ENTRYPOINT</code>, while <code>args</code> is used to specify the container’s <code>CMD</code>:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>pod<span class="token punctuation">-</span>command<span class="token punctuation">-</span>and<span class="token punctuation">-</span>args
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container
+</span><span class="code-line">      <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span><span class="code-line">      <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sleep"</span><span class="token punctuation">]</span>  <span class="token comment"># ENTRYPOINT</span>
+</span><span class="code-line">      <span class="token key atrule">args</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"10"</span><span class="token punctuation">]</span>             <span class="token comment"># CMD</span>
+</span></code></pre>
+<h2 id="specify-working-directory-of-the-container">Specify Working Directory of the Container</h2>
+<p><code>workingDir</code> is used to specify the container's <code>WORKDIR</code>:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>pod<span class="token punctuation">-</span>workingdir
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container
+</span><span class="code-line">      <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span><span class="code-line">      <span class="token key atrule">workingDir</span><span class="token punctuation">:</span> /tmp        <span class="token comment"># WORKINGDIR</span>
+</span></code></pre>
+<p>The following command confirms that the working directory is set to <code>/tmp</code>:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> sample-pod-workingdir -- <span class="token builtin class-name">pwd</span>
+</span><span class="code-line">
+</span><span class="code-line">/tmp
+</span></code></pre>
+<h2 id="create-a-pod-using-host-network">Create a Pod using Host Network</h2>
+<p>The IP address assigned to a Pod is in a different range from the host's IP address. It is also unreachable from outside the Kubernetes cluster.
+To allow a Pod to use the host's network, set <code>spec.hostNetwork: true</code> in the Pod manifest:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>pod<span class="token punctuation">-</span>host<span class="token punctuation">-</span>network
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">hostNetwork</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>    <span class="token comment"># Here</span>
+</span><span class="code-line">  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container
+</span><span class="code-line">      <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span></code></pre>
+<p>Apply the manifest:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> pod-host-network.yaml
+</span></code></pre>
+<p>Then confirm that an HTTP request can reach the Nginx container:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line"><span class="token function">curl</span> http://<span class="token operator">&#x3C;</span>KUBERNETES_NODE_IP_ADDRESS<span class="token operator">></span>/ <span class="token parameter variable">-v</span>
+</span></code></pre>
+<h2 id="create-a-pod-with-multiple-containers">Create a Pod with Multiple Containers</h2>
+<p>A Pod with multiple containers can be created by adding multiple container definitions to the manifest:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>pod<span class="token punctuation">-</span>sidecar<span class="token punctuation">-</span>pattern
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container           <span class="token comment"># Main container</span>
+</span><span class="code-line">      <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span><span class="code-line">    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> fluent<span class="token punctuation">-</span>bit<span class="token punctuation">-</span>container      <span class="token comment"># Supporting container</span>
+</span><span class="code-line">      <span class="token key atrule">image</span><span class="token punctuation">:</span> fluent/fluent<span class="token punctuation">-</span>bit<span class="token punctuation">:</span>5.0.7
+</span></code></pre>
+<p>The following command confirms that there are two containers in the Pod:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl describe pod sample-pod-sidecar-pattern
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">Name:             sample-pod-sidecar-pattern
+</span><span class="code-line">Namespace:        default
+</span><span class="code-line"><span class="token punctuation">..</span>.
+</span><span class="code-line">
+</span><span class="code-line">Containers:
+</span><span class="code-line">  nginx-container:
+</span><span class="code-line">    Container ID:   containerd://e16615678fcce4eb2c82c7f4b472fc38aeec02a369e33327c201a38b6cbe7ff5
+</span><span class="code-line">    Image:          nginx:1.30
+</span><span class="code-line">    Image ID:       docker.io/library/nginx@sha256:540858b3a92eed95cbcae475698c12f619b4a6afa122485f439e4d7227cbeb38
+</span><span class="code-line">    Port:           <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    Host Port:      <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    State:          Running
+</span><span class="code-line">      Started:      Mon, <span class="token number">15</span> Jun <span class="token number">2026</span> <span class="token number">15</span>:06:57 <span class="token parameter variable">-0700</span>
+</span><span class="code-line">    Ready:          True
+</span><span class="code-line">    Restart Count:  <span class="token number">0</span>
+</span><span class="code-line">    Environment:    <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    Mounts:
+</span><span class="code-line">      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-j9jlk <span class="token punctuation">(</span>ro<span class="token punctuation">)</span>
+</span><span class="code-line">  fluent-bit-container:
+</span><span class="code-line">    Container ID:   containerd://f42a6c52f201285a65017e5e93e35bdc65097eeae8b6296e19e1d8fc4c671653
+</span><span class="code-line">    Image:          fluent/fluent-bit:5.0.7
+</span><span class="code-line">    Image ID:       docker.io/fluent/fluent-bit@sha256:c96ee743cba9b1d5a38654931f411700af80bb7652697afbe67daad46cae237b
+</span><span class="code-line">    Port:           <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    Host Port:      <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    State:          Running
+</span><span class="code-line">      Started:      Mon, <span class="token number">15</span> Jun <span class="token number">2026</span> <span class="token number">15</span>:07:18 <span class="token parameter variable">-0700</span>
+</span><span class="code-line">    Ready:          True
+</span><span class="code-line">    Restart Count:  <span class="token number">0</span>
+</span><span class="code-line">    Environment:    <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">    Mounts:
+</span><span class="code-line">      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-j9jlk <span class="token punctuation">(</span>ro<span class="token punctuation">)</span>
+</span><span class="code-line"><span class="token punctuation">..</span>.
+</span></code></pre>
+<h2 id="delete-a-pod">Delete a Pod</h2>
+<p>The following command deletes a Pod named <code>sample-pod</code>:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete pod sample-pod
+</span></code></pre>
+<h1 id="replicasets">ReplicaSets</h1>
+<p>Next, let’s look at ReplicaSets.</p>
+<p>A ReplicaSet is a workload resource that creates Pod replicas and keeps the number of running Pods at the user-specified count.</p>
+<p>Kubernetes attempts to distribute the Pods managed by a ReplicaSet evenly across the available nodes.</p>
+<h2 id="create-a-replicaset">Create a ReplicaSet</h2>
+<p>The manifest for a ReplicaSet looks like this:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> ReplicaSet
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>replicaset
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">3</span>  <span class="token comment"># The number of pods.</span>
+</span><span class="code-line">  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">app</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>app  <span class="token comment"># Label that Pods in this ReplicaSet must have.</span>
+</span><span class="code-line">  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">app</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>app  <span class="token comment"># This line sets the 'sample-app' label on the Pods.</span>
+</span><span class="code-line">    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container
+</span><span class="code-line">        <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span></code></pre>
+<p><code>spec.replicas</code> specifies the number of Pods to maintain. <code>spec.selector.matchLabels.app</code> specifies the label that Pods managed by the ReplicaSet must have.</p>
+<p>Apply the manifest to create a ReplicaSet:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> replicaset.yaml
+</span></code></pre>
+<h2 id="get-replicaset-information">Get ReplicaSet Information</h2>
+<p>The status of the created ReplicaSet can be checked with the following command:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get replicasets <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                DESIRED   CURRENT   READY   AGE   CONTAINERS        IMAGES       SELECTOR
+</span><span class="code-line">sample-replicaset   3         3         3       52s   nginx-container   nginx:1.30   app=sample-app
+</span></code></pre>
+<p>For more detailed information, run the following command:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl describe replicasets sample-replicaset
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">Name:         sample-replicaset
+</span><span class="code-line">Namespace:    default
+</span><span class="code-line">Selector:     app=sample-app
+</span><span class="code-line">Labels:       &#x3C;none>
+</span><span class="code-line">Annotations:  &#x3C;none>
+</span><span class="code-line">Replicas:     3 current / 3 desired
+</span><span class="code-line">Pods Status:  3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+</span><span class="code-line">Pod Template:
+</span><span class="code-line">  Labels:  app=sample-app
+</span><span class="code-line">  Containers:
+</span><span class="code-line">   nginx-container:
+</span><span class="code-line">    Image:         nginx:1.30
+</span><span class="code-line">    Port:          &#x3C;none>
+</span><span class="code-line">    Host Port:     &#x3C;none>
+</span><span class="code-line">    Environment:   &#x3C;none>
+</span><span class="code-line">    Mounts:        &#x3C;none>
+</span><span class="code-line">  Volumes:         &#x3C;none>
+</span><span class="code-line">  Node-Selectors:  &#x3C;none>
+</span><span class="code-line">  Tolerations:     &#x3C;none>
+</span><span class="code-line">Events:
+</span><span class="code-line">  Type    Reason            Age   From                   Message
+</span><span class="code-line">  ----    ------            ----  ----                   -------
+</span><span class="code-line">  Normal  SuccessfulCreate  8m4s  replicaset-controller  Created pod: sample-replicaset-zpw2g
+</span><span class="code-line">  Normal  SuccessfulCreate  8m4s  replicaset-controller  Created pod: sample-replicaset-gdrnx
+</span><span class="code-line">  Normal  SuccessfulCreate  8m4s  replicaset-controller  Created pod: sample-replicaset-jmvgk
+</span></code></pre>
+<p>The Pods created by the ReplicaSet are running as expected. Their status can be verified using the commands shown earlier:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pods <span class="token parameter variable">-l</span> <span class="token assign-left variable">app</span><span class="token operator">=</span>sample-app <span class="token parameter variable">-o</span> wide
+</span><span class="code-line">
+</span><span class="code-line">NAME                      READY   STATUS    RESTARTS   AGE   IP             NODE             NOMINATED NODE   READINESS GATES
+</span><span class="code-line">sample-replicaset-gdrnx   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          11m   <span class="token number">10.244</span>.1.108   worker01.local   <span class="token operator">&#x3C;</span>none<span class="token operator">></span>           <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">sample-replicaset-jmvgk   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          11m   <span class="token number">10.244</span>.2.254   worker02.local   <span class="token operator">&#x3C;</span>none<span class="token operator">></span>           <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span><span class="code-line">sample-replicaset-zpw2g   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          11m   <span class="token number">10.244</span>.2.253   worker02.local   <span class="token operator">&#x3C;</span>none<span class="token operator">></span>           <span class="token operator">&#x3C;</span>none<span class="token operator">></span>
+</span></code></pre>
+<h2 id="self-healing-of-replicasets">Self Healing of ReplicaSets</h2>
+<p>One of the benefits of using a ReplicaSet is its self-healing capability. Self-healing is a feature that allows Kubernetes to detect when a Pod managed by a ReplicaSet stops running and automatically create a replacement Pod.</p>
+<p>Stop a Pod:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete pod sample-replicaset-gdrnx
+</span></code></pre>
+<p>After that, check the Pods:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pods <span class="token parameter variable">-l</span> <span class="token assign-left variable">app</span><span class="token operator">=</span>sample-app <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The output shows that the number of Pods is still three.</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                      READY   STATUS    RESTARTS   AGE   IP             NODE             NOMINATED NODE   READINESS GATES
+</span><span class="code-line">sample-replicaset-ddbbp   1/1     Running   0          92s   10.244.1.109   worker01.local   &#x3C;none>           &#x3C;none>
+</span><span class="code-line">sample-replicaset-jmvgk   1/1     Running   0          19m   10.244.2.254   worker02.local   &#x3C;none>           &#x3C;none>
+</span><span class="code-line">sample-replicaset-zpw2g   1/1     Running   0          19m   10.244.2.253   worker02.local   &#x3C;none>           &#x3C;none>
+</span></code></pre>
+<p>The creation of a new Pod can be confirmed by checking the <code>Events</code> section in the output of the <code>kubectl describe</code> command:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl describe replicasets sample-replicaset
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">...
+</span><span class="code-line">Events:
+</span><span class="code-line">  Type    Reason            Age   From                   Message
+</span><span class="code-line">  ----    ------            ----  ----                   -------
+</span><span class="code-line">  Normal  SuccessfulCreate  18m   replicaset-controller  Created pod: sample-replicaset-zpw2g
+</span><span class="code-line">  Normal  SuccessfulCreate  18m   replicaset-controller  Created pod: sample-replicaset-gdrnx
+</span><span class="code-line">  Normal  SuccessfulCreate  18m   replicaset-controller  Created pod: sample-replicaset-jmvgk
+</span><span class="code-line">  Normal  SuccessfulCreate  52s   replicaset-controller  Created pod: sample-replicaset-ddbbp
+</span></code></pre>
+<h2 id="delete-a-replicaset">Delete a ReplicaSet</h2>
+<p>Delete a ReplicaSet with the following command:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete replicaset sample-replicaset
+</span></code></pre>
+<h1 id="deployments">Deployments</h1>
+<p>A Deployment is a workload resource that manages ReplicaSets. It enables rolling updates and rollbacks.</p>
+<h2 id="create-a-deployment">Create a Deployment</h2>
+<p>The following snippet shows the manifest for a Deployment:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>deployment
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">3</span>
+</span><span class="code-line">  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">app</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>app
+</span><span class="code-line">  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">app</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>app
+</span><span class="code-line">    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container
+</span><span class="code-line">        <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span></code></pre>
+<p>Apply the manifest to create a Deployment:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> deployment.yaml
+</span></code></pre>
+<h2 id="get-deployment-information">Get Deployment Information</h2>
+<p>The following command shows the status of the Deployment:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get deployments
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+</span><span class="code-line">sample-deployment   3/3     3            3           10s
+</span></code></pre>
+<p><code>kubectl describe</code> displays detailed information:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl describe deployment sample-deployment
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">Name:                   sample-deployment
+</span><span class="code-line">Namespace:              default
+</span><span class="code-line">CreationTimestamp:      Mon, 15 Jun 2026 20:42:21 -0700
+</span><span class="code-line">Labels:                 &#x3C;none>
+</span><span class="code-line">Annotations:            deployment.kubernetes.io/revision: 1
+</span><span class="code-line">Selector:               app=sample-app
+</span><span class="code-line">Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+</span><span class="code-line">StrategyType:           RollingUpdate
+</span><span class="code-line">MinReadySeconds:        0
+</span><span class="code-line">RollingUpdateStrategy:  25% max unavailable, 25% max surge
+</span><span class="code-line">Pod Template:
+</span><span class="code-line">  Labels:  app=sample-app
+</span><span class="code-line">  Containers:
+</span><span class="code-line">   nginx-container:
+</span><span class="code-line">    Image:         nginx:1.30
+</span><span class="code-line">    Port:          &#x3C;none>
+</span><span class="code-line">    Host Port:     &#x3C;none>
+</span><span class="code-line">    Environment:   &#x3C;none>
+</span><span class="code-line">    Mounts:        &#x3C;none>
+</span><span class="code-line">  Volumes:         &#x3C;none>
+</span><span class="code-line">  Node-Selectors:  &#x3C;none>
+</span><span class="code-line">  Tolerations:     &#x3C;none>
+</span><span class="code-line">Conditions:
+</span><span class="code-line">  Type           Status  Reason
+</span><span class="code-line">  ----           ------  ------
+</span><span class="code-line">  Available      True    MinimumReplicasAvailable
+</span><span class="code-line">  Progressing    True    NewReplicaSetAvailable
+</span><span class="code-line">OldReplicaSets:  &#x3C;none>
+</span><span class="code-line">NewReplicaSet:   sample-deployment-6748655ccc (3/3 replicas created)
+</span><span class="code-line">Events:
+</span><span class="code-line">  Type    Reason             Age    From                   Message
+</span><span class="code-line">  ----    ------             ----   ----                   -------
+</span><span class="code-line">  Normal  ScalingReplicaSet  4m54s  deployment-controller  Scaled up replica set sample-deployment-6748655ccc from 0 to 3
+</span></code></pre>
+<p>The creation of the ReplicaSet can also be confirmed:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get replicasets <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                           DESIRED   CURRENT   READY   AGE     CONTAINERS        IMAGES       SELECTOR
+</span><span class="code-line">sample-deployment-6748655ccc   3         3         3       9m29s   nginx-container   nginx:1.30   app=sample-app,pod-template-hash=6748655ccc
+</span></code></pre>
+<p>The creation of the Pods managed by the ReplicaSet can also be confirmed:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pods <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                                 READY   STATUS    RESTARTS   AGE   IP             NODE             NOMINATED NODE   READINESS GATES
+</span><span class="code-line">sample-deployment-6748655ccc-hnn2h   1/1     Running   0          12m   10.244.2.3     worker02.local   &#x3C;none>           &#x3C;none>
+</span><span class="code-line">sample-deployment-6748655ccc-jv7tc   1/1     Running   0          12m   10.244.1.110   worker01.local   &#x3C;none>           &#x3C;none>
+</span><span class="code-line">sample-deployment-6748655ccc-zpgkz   1/1     Running   0          12m   10.244.2.2     worker02.local   &#x3C;none>           &#x3C;none>
+</span></code></pre>
+<h2 id="performing-a-rolling-update-with-deployments">Performing a Rolling Update with Deployments</h2>
+<p>A rolling update of the Deployment is triggered whenever the Pod template <code>spec.template</code> changes.</p>
+<p>To demonstrate a rolling update, update the container image version in the Deployment manifest:</p>
+<pre class="language-diff"><code class="language-diff code-highlight"><span class="code-line"># diff sample-deployment.yaml sample-deployment-version-up.yaml
+</span><span class="code-line"><span class="token coord">18c18</span>
+</span><span class="code-line"><span class="token deleted-arrow deleted"><span class="token prefix deleted">&#x3C;</span><span class="token line">         image: nginx:1.30
+</span></span></span><span class="code-line deleted"><span class="token deleted-arrow deleted"><span class="token line"></span></span><span class="token coord">---</span>
+</span><span class="code-line"><span class="token inserted-arrow inserted"><span class="token prefix inserted">></span><span class="token line">         image: nginx:1.31
+</span></span></span></code></pre>
+<p>Apply the version update:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> sample-deployment-version-up.yaml
+</span></code></pre>
+<p>The rolling update is now in progress.</p>
+<p>The following command shows the progress of the rolling update:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl rollout status deployment sample-deployment
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">1</span> out of <span class="token number">3</span> new replicas have been updated<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">1</span> out of <span class="token number">3</span> new replicas have been updated<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">1</span> out of <span class="token number">3</span> new replicas have been updated<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">2</span> out of <span class="token number">3</span> new replicas have been updated<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">2</span> out of <span class="token number">3</span> new replicas have been updated<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">2</span> out of <span class="token number">3</span> new replicas have been updated<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">2</span> out of <span class="token number">3</span> new replicas have been updated<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">1</span> old replicas are pending termination<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">1</span> old replicas are pending termination<span class="token punctuation">..</span>.
+</span><span class="code-line">Waiting <span class="token keyword">for</span> deployment <span class="token string">"sample-deployment"</span> rollout to finish: <span class="token number">1</span> old replicas are pending termination<span class="token punctuation">..</span>.
+</span><span class="code-line">deployment <span class="token string">"sample-deployment"</span> successfully rolled out
+</span></code></pre>
+<p>The message <code>Waiting for deployment "sample-deployment" rollout to finish: 1 out of 3 new replicas have been updated...</code> reports the progress of the rolling update.</p>
+<p>One of the three Pods has already been replaced with a Pod created by the new ReplicaSet, while the remaining two Pods are still running from the old ReplicaSet. Kubernetes will continue replacing the old Pods until all replicas have been updated.</p>
+<h2 id="delete-a-deployment">Delete a Deployment</h2>
+<p>Delete a Deployment using the following command:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete deployment sample-deployment
+</span></code></pre>
+<h1 id="daemonsets">DaemonSets</h1>
+<p>A DaemonSet is a workload resource that ensures one Pod runs on each eligible node.</p>
+<p>A DaemonSet is useful for running monitoring agents or other system-level processes that need to run on every Kubernetes node.</p>
+<h2 id="create-a-daemonset">Create a DaemonSet</h2>
+<p>The following manifest defines a DaemonSet:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> DaemonSet
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>daemonset
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">app</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>daemonset
+</span><span class="code-line">  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">app</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>daemonset
+</span><span class="code-line">    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container
+</span><span class="code-line">        <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span></code></pre>
+<p>Apply the manifest to create a DaemonSet:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> daemonset.yaml
+</span></code></pre>
+<h2 id="get-daemonset-information">Get DaemonSet Information</h2>
+<p>The following command displays the status of the created DaemonSet:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get daemonset <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME               DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE     CONTAINERS        IMAGES       SELECTOR
+</span><span class="code-line">sample-daemonset   2         2         2       2            2           &#x3C;none>          2m41s   nginx-container   nginx:1.30   app=sample-daemonset
+</span></code></pre>
+<p>The following command verifies that the Pods are distributed across the Kubernetes nodes:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pods <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The output shows that the DaemonSet has scheduled one Pod on each node, as indicated by the NODE column.</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                     READY   STATUS    RESTARTS   AGE     IP             NODE             NOMINATED NODE   READINESS GATES
+</span><span class="code-line">sample-daemonset-45h4c   1/1     Running   0          4m45s   10.244.2.6     worker02.local   &#x3C;none>           &#x3C;none>
+</span><span class="code-line">sample-daemonset-674bx   1/1     Running   0          4m45s   10.244.1.112   worker01.local   &#x3C;none>           &#x3C;none>
+</span></code></pre>
+<h2 id="delete-a-daemonset">Delete a DaemonSet</h2>
+<p>The following command deletes a DaemonSet:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete daemonset sample-daemonset
+</span></code></pre>
+<h1 id="statefulsets">StatefulSets</h1>
+<p>A StatefulSet is a workload resource that is designed for applications that need to preserve their identity and data across restarts.</p>
+<h2 id="create-a-statefulset">Create a StatefulSet</h2>
+<p>The following manifest defines a StatefulSet with three replicas, each having its own persistent volume:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> StatefulSet
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>statefulset
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">serviceName</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>statefulset
+</span><span class="code-line">  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">3</span>
+</span><span class="code-line">  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">app</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>statefulset
+</span><span class="code-line">  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">app</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>statefulset
+</span><span class="code-line">    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>container
+</span><span class="code-line">        <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx<span class="token punctuation">:</span><span class="token number">1.30</span>
+</span><span class="code-line">        <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>storage
+</span><span class="code-line">          <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /usr/share/nginx/html
+</span><span class="code-line">  <span class="token key atrule">volumeClaimTemplates</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token punctuation">-</span> <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>storage
+</span><span class="code-line">    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">accessModes</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> ReadWriteOnce
+</span><span class="code-line">      <span class="token key atrule">resources</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">requests</span><span class="token punctuation">:</span>
+</span><span class="code-line">          <span class="token key atrule">storage</span><span class="token punctuation">:</span> 1G
+</span></code></pre>
+<p>Apply the manifest to a Kubernetes cluster:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> statefulset.yaml
+</span></code></pre>
+<h2 id="get-statefulset-information">Get StatefulSet Information</h2>
+<p>The following command displays the status of the created StatefulSet:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get statefulset <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                 READY   AGE     CONTAINERS        IMAGES
+</span><span class="code-line">sample-statefulset   3/3     9m19s   nginx-container   nginx:1.30
+</span></code></pre>
+<p>The following command verifies that the Pods are also created:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pods <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                   READY   STATUS    RESTARTS   AGE   IP             NODE             NOMINATED NODE   READINESS GATES
+</span><span class="code-line">sample-statefulset-0   1/1     Running   0          10m   10.244.1.123   worker01.local   &#x3C;none>           &#x3C;none>
+</span><span class="code-line">sample-statefulset-1   1/1     Running   0          10m   10.244.2.16    worker02.local   &#x3C;none>           &#x3C;none>
+</span><span class="code-line">sample-statefulset-2   1/1     Running   0          10m   10.244.2.18    worker02.local   &#x3C;none>           &#x3C;none>
+</span></code></pre>
+<p>One notable characteristic of StatefulSets is that Pod names end with ordinal numbers such as <code>-0</code>, <code>-1</code>, and <code>-2</code>.
+Kubernetes creates Pods managed by a StatefulSet in ordinal order.
+While Pod names in a Deployment change when they are recreated, Pod names in a StatefulSet remain the same.</p>
+<h2 id="check-persistentvolumeclaims-used-by-statefulset-pods">Check PersistentVolumeClaims Used by StatefulSet Pods</h2>
+<p>The following command displays the status of the PersistentVolumeClaims (PVC) used by the StatefulSet Pods:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pvc <span class="token parameter variable">-o</span> wide
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE   VOLUMEMODE
+</span><span class="code-line">nginx-storage-sample-statefulset-0   Bound    pvc-5ed1b9d7-0eb2-4e87-9617-1ab37d766412   1G         RWO            local-path     &#x3C;unset>                 20m   Filesystem
+</span><span class="code-line">nginx-storage-sample-statefulset-1   Bound    pvc-f6554d63-89f7-427c-a88c-f799ec9bddef   1G         RWO            local-path     &#x3C;unset>                 20m   Filesystem
+</span><span class="code-line">nginx-storage-sample-statefulset-2   Bound    pvc-7632a154-0d40-43dd-b08e-6e45f3131ddf   1G         RWO            local-path     &#x3C;unset>                 20m   Filesystem
+</span></code></pre>
+<p>The <code>volumeClaimTemplates</code> section allows Kubernetes to automatically create a dedicated PVC for each Pod in a StatefulSet.
+If a Pod is deleted, its corresponding PVC remains, allowing the recreated Pod to continue using the same data.
+Deployments do not provide this capability.</p>
+<h2 id="delete-a-statefulset">Delete a StatefulSet</h2>
+<p>The following command deletes a StatefulSet:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete statefulset sample-statefulset
+</span></code></pre>
+<h1 id="jobs">Jobs</h1>
+<p>A Job is a workload resource that creates one or more Pods and ensures that a specified number of them complete successfully.</p>
+<h2 id="create-a-job">Create a Job</h2>
+<p>The following manifest defines a Job:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> batch/v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> Job
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>job
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">completions</span><span class="token punctuation">:</span> <span class="token number">3</span>  <span class="token comment"># Number of successful completions required</span>
+</span><span class="code-line">                  <span class="token comment"># for the Job to be considered complete.</span>
+</span><span class="code-line">  <span class="token key atrule">parallelism</span><span class="token punctuation">:</span> <span class="token number">1</span>  <span class="token comment"># Maximum number of Pods that can run</span>
+</span><span class="code-line">                  <span class="token comment"># in parallel.</span>
+</span><span class="code-line">  <span class="token key atrule">backoffLimit</span><span class="token punctuation">:</span> <span class="token number">10</span>  <span class="token comment"># Number of retries before the Job is marked as failed.</span>
+</span><span class="code-line">  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> busybox<span class="token punctuation">-</span>container
+</span><span class="code-line">        <span class="token key atrule">image</span><span class="token punctuation">:</span> busybox<span class="token punctuation">:</span><span class="token number">1.37</span>
+</span><span class="code-line">        <span class="token key atrule">command</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token punctuation">-</span> sh
+</span><span class="code-line">        <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+</span><span class="code-line">        <span class="token punctuation">-</span> <span class="token punctuation">|</span><span class="token scalar string">
+</span></span><span class="code-line"><span class="token scalar string">          echo "Job started"
+</span></span><span class="code-line"><span class="token scalar string">          sleep 10
+</span></span><span class="code-line"><span class="token scalar string">          echo "Job completed"</span>
+</span><span class="code-line">      <span class="token key atrule">restartPolicy</span><span class="token punctuation">:</span> Never
+</span></code></pre>
+<p>Apply the manifest to a Kubernetes cluster:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> job.yaml
+</span></code></pre>
+<h2 id="get-job-information">Get Job Information</h2>
+<p>The following command displays the status of the created Job:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get job sample-job
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME         STATUS     COMPLETIONS   DURATION   AGE
+</span><span class="code-line">sample-job   Complete   3/3           42s        2m26s
+</span></code></pre>
+<h2 id="check-pods-managed-by-job">Check Pods Managed by Job</h2>
+<p>The following command continuously monitors the Pods managed by the Job:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get pods <span class="token parameter variable">--watch</span>
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME               READY   STATUS              RESTARTS   AGE
+</span><span class="code-line">sample-job-2g9tw   0/1     ContainerCreating   0          2s
+</span><span class="code-line">sample-job-2g9tw   1/1     Running             0          2s
+</span><span class="code-line">sample-job-2g9tw   0/1     Completed           0          12s
+</span><span class="code-line">sample-job-2g9tw   0/1     Completed           0          14s
+</span><span class="code-line">sample-job-fgxjw   0/1     Pending             0          0s
+</span><span class="code-line">sample-job-fgxjw   0/1     Pending             0          0s
+</span><span class="code-line">sample-job-2g9tw   0/1     Completed           0          14s
+</span><span class="code-line">sample-job-fgxjw   0/1     ContainerCreating   0          0s
+</span><span class="code-line">sample-job-fgxjw   1/1     Running             0          2s
+</span><span class="code-line">sample-job-fgxjw   0/1     Completed           0          12s
+</span><span class="code-line">sample-job-fgxjw   0/1     Completed           0          14s
+</span><span class="code-line">sample-job-479b2   0/1     Pending             0          0s
+</span><span class="code-line">sample-job-479b2   0/1     Pending             0          0s
+</span><span class="code-line">sample-job-fgxjw   0/1     Completed           0          14s
+</span><span class="code-line">sample-job-479b2   0/1     ContainerCreating   0          0s
+</span><span class="code-line">sample-job-479b2   1/1     Running             0          2s
+</span><span class="code-line">sample-job-479b2   0/1     Completed           0          12s
+</span><span class="code-line">sample-job-479b2   0/1     Completed           0          14s
+</span><span class="code-line">sample-job-479b2   0/1     Completed           0          14s
+</span></code></pre>
+<p>The three Pods, <code>sample-job-2g9tw</code>, <code>sample-job-fgxjw</code>, and <code>sample-job-479b2</code>, are created and eventually reach the <code>Completed</code> state.
+Since <code>parallelism</code> is set to <code>1</code>, the Pods are executed sequentially.</p>
+<h2 id="delete-a-job">Delete a Job</h2>
+<p>The following command deletes a Job:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete job sample-job
+</span></code></pre>
+<h1 id="cronjobs">CronJobs</h1>
+<p>A CronJob is a workload resource that creates Jobs on a repeating schedule.</p>
+<h2 id="create-a-cronjob">Create a CronJob</h2>
+<p>The following manifest defines a CronJob:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token punctuation">---</span>
+</span><span class="code-line"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> batch/v1
+</span><span class="code-line"><span class="token key atrule">kind</span><span class="token punctuation">:</span> CronJob
+</span><span class="code-line"><span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">name</span><span class="token punctuation">:</span> sample<span class="token punctuation">-</span>cronjob
+</span><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">schedule</span><span class="token punctuation">:</span> <span class="token string">"*/1 * * * *"</span>  <span class="token comment"># Run every minute</span>
+</span><span class="code-line">  <span class="token key atrule">concurrencyPolicy</span><span class="token punctuation">:</span> Allow  <span class="token comment"># Concurrency policy for the CronJob. Valid values are:</span>
+</span><span class="code-line">                            <span class="token comment"># - Allow: Allows Jobs to run concurrently. This is the default value.</span>
+</span><span class="code-line">                            <span class="token comment"># - Forbid: Skips the next run if the previous Job is still running.</span>
+</span><span class="code-line">                            <span class="token comment"># - Replace: Replaces the currently running Job with a new one.</span>
+</span><span class="code-line">  <span class="token key atrule">startingDeadlineSeconds</span><span class="token punctuation">:</span> <span class="token number">30</span>  <span class="token comment"># Deadline in seconds for starting a Job</span>
+</span><span class="code-line">                               <span class="token comment"># if it misses its scheduled time.</span>
+</span><span class="code-line">  <span class="token key atrule">successfulJobsHistoryLimit</span><span class="token punctuation">:</span> <span class="token number">5</span>  <span class="token comment"># Number of successful Jobs to retain.</span>
+</span><span class="code-line">  <span class="token key atrule">failedJobsHistoryLimit</span><span class="token punctuation">:</span> <span class="token number">3</span>  <span class="token comment"># Number of failed Jobs to retain.</span>
+</span><span class="code-line">  <span class="token key atrule">suspend</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+</span><span class="code-line">  <span class="token key atrule">jobTemplate</span><span class="token punctuation">:</span>
+</span><span class="code-line">    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">      <span class="token key atrule">completions</span><span class="token punctuation">:</span> <span class="token number">1</span>
+</span><span class="code-line">      <span class="token key atrule">parallelism</span><span class="token punctuation">:</span> <span class="token number">1</span>
+</span><span class="code-line">      <span class="token key atrule">backoffLimit</span><span class="token punctuation">:</span> <span class="token number">0</span>
+</span><span class="code-line">      <span class="token key atrule">template</span><span class="token punctuation">:</span>
+</span><span class="code-line">        <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">          <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+</span><span class="code-line">          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> busybox<span class="token punctuation">-</span>container
+</span><span class="code-line">            <span class="token key atrule">image</span><span class="token punctuation">:</span> busybox<span class="token punctuation">:</span><span class="token number">1.37</span>
+</span><span class="code-line">            <span class="token key atrule">command</span><span class="token punctuation">:</span>
+</span><span class="code-line">            <span class="token punctuation">-</span> sh
+</span><span class="code-line">            <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+</span><span class="code-line">            <span class="token punctuation">-</span> <span class="token punctuation">|</span><span class="token scalar string">
+</span></span><span class="code-line"><span class="token scalar string">              echo "Job started"
+</span></span><span class="code-line"><span class="token scalar string">              sleep 10
+</span></span><span class="code-line"><span class="token scalar string">              echo "Job completed"</span>
+</span><span class="code-line">          <span class="token key atrule">restartPolicy</span><span class="token punctuation">:</span> Never
+</span></code></pre>
+<p>Apply the manifest to a Kubernetes cluster:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> cronjob.yaml
+</span></code></pre>
+<h2 id="get-cronjob-information">Get CronJob Information</h2>
+<p>The following command displays the status of the created CronJob:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get cronjob sample-cronjob
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME             SCHEDULE      TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+</span><span class="code-line">sample-cronjob   */1 * * * *   &#x3C;none>     False     1        3s              73s
+</span></code></pre>
+<p>The following command continuously monitors the Jobs managed by the CronJob:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get job
+</span></code></pre>
+<p>The command produces output similar to the following:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                      STATUS     COMPLETIONS   DURATION   AGE
+</span><span class="code-line">sample-cronjob-29711434   Complete   1/1           13s        2m8s
+</span><span class="code-line">sample-cronjob-29711435   Complete   1/1           14s        68s
+</span><span class="code-line">sample-cronjob-29711436   Running    0/1           8s         8s
+</span></code></pre>
+<h2 id="suspend-a-cronjob">Suspend a CronJob</h2>
+<p>To suspend a CronJob, set <code>spec.suspend</code> to <code>true</code>:</p>
+<pre class="language-yaml"><code class="language-yaml code-highlight"><span class="code-line"><span class="token key atrule">spec</span><span class="token punctuation">:</span>
+</span><span class="code-line">  <span class="token key atrule">suspend</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+</span></code></pre>
+<p>Apply the updated manifest:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl apply <span class="token parameter variable">-f</span> cronjob.yaml
+</span></code></pre>
+<p>Check the status of the CronJob:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl get cronjob sample-cronjob
+</span></code></pre>
+<p>The CronJob becomes suspended, as indicated by <code>True</code> in the <code>SUSPEND</code> column:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME             SCHEDULE      TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+</span><span class="code-line">sample-cronjob   */1 * * * *   &#x3C;none>     True      0        41s             8m51s
+</span></code></pre>
+<h2 id="manually-execute-a-cronjob">Manually Execute a CronJob</h2>
+<p><code>kubectl create job</code> with the <code>--from</code> option creates a Job from a CronJob:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl create job sample-job-from-cronjob <span class="token parameter variable">--from</span> cronjob/sample-cronjob
+</span></code></pre>
+<h2 id="delete-a-cronjob">Delete a CronJob</h2>
+<p>The following command deletes a CronJob:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl delete cronjob sample-cronjob
+</span></code></pre>
+<h1 id="next-steps">Next Steps</h1>
+<p>In this article, I explored the behavior of Kubernetes workload resources, including Pods, ReplicaSets, Deployments, DaemonSets, StatefulSets, Jobs, and CronJobs.</p>
+<p>Next, I will explore Service resources and learn how Kubernetes provides network access to applications.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

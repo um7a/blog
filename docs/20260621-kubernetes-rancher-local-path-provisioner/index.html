@@ -374,7 +374,9 @@
           </li><li class="toc-depth-1">
             <span>5.</span> <a href="#use-the-pvc-from-a-pod">Use the PVC from a Pod</a>
           </li><li class="toc-depth-1">
-            <span>6.</span> <a href="#limitations-of-local-path-provisioner">Limitations of local-path-provisioner</a>
+            <span>6.</span> <a href="#set-local-path-as-the-default-storage-class">Set  local-path  as the Default Storage Class</a>
+          </li><li class="toc-depth-1">
+            <span>7.</span> <a href="#limitations-of-local-path-provisioner">Limitations of local-path-provisioner</a>
           </li>
         </ul>
       </nav>
@@ -502,6 +504,15 @@ It watches for new PersistentVolumeClaims (PVCs) and automatically provisions PV
 </span></code></pre>
 <p>The output should look similar to the following:</p>
 <pre><code class="code-highlight"><span class="code-line">hello
+</span></code></pre>
+<h1 id="set-local-path-as-the-default-storage-class">Set <code>local-path</code> as the Default Storage Class</h1>
+<p>The following command sets <code>local-path</code> as the default storage class:</p>
+<pre class="language-shell"><code class="language-shell code-highlight"><span class="code-line">kubectl annotate storageclass local-path <span class="token punctuation">\</span>
+</span><span class="code-line">  storageclass.kubernetes.io/is-default-class<span class="token operator">=</span>true
+</span></code></pre>
+<p>The output shows that <code>local-path</code> is the default StorageClass, as indicated by <code>(default)</code> in the <code>NAME</code> column:</p>
+<pre><code class="code-highlight"><span class="code-line">NAME                   PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+</span><span class="code-line">local-path (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  11d
 </span></code></pre>
 <h1 id="limitations-of-local-path-provisioner">Limitations of local-path-provisioner</h1>
 <p>local-path-provisioner stores data on the node where a Pod is running.
